@@ -19,9 +19,11 @@
 #include <QGroupBox>
 #include <QHeaderView>
 #include <QLabel>
+#include <QLineEdit>
 #include <QMouseEvent>
 #include <QMimeData>
 #include <QPushButton>
+#include <QResizeEvent>
 #include <QSlider>
 #include <QShortcut>
 #include <QSignalBlocker>
@@ -42,6 +44,55 @@
 
 namespace
 {
+class TimeSpinBox final : public QSpinBox
+{
+public:
+  explicit TimeSpinBox(QWidget* parent = nullptr)
+    : QSpinBox(parent)
+  {
+    setButtonSymbols(QAbstractSpinBox::NoButtons);
+    setMinimumWidth(98);
+
+    incrementButton_ = new QToolButton(this);
+    incrementButton_->setObjectName("spinIncrementButton");
+    incrementButton_->setText("+");
+    incrementButton_->setToolTip("Increase");
+    incrementButton_->setAccessibleName("Increase");
+    incrementButton_->setAutoRepeat(true);
+    incrementButton_->setFocusPolicy(Qt::NoFocus);
+
+    decrementButton_ = new QToolButton(this);
+    decrementButton_->setObjectName("spinDecrementButton");
+    decrementButton_->setText("-");
+    decrementButton_->setToolTip("Decrease");
+    decrementButton_->setAccessibleName("Decrease");
+    decrementButton_->setAutoRepeat(true);
+    decrementButton_->setFocusPolicy(Qt::NoFocus);
+
+    connect(incrementButton_, &QToolButton::clicked, this, &QSpinBox::stepUp);
+    connect(decrementButton_, &QToolButton::clicked, this, &QSpinBox::stepDown);
+    lineEdit()->setTextMargins(0, 0, stepButtonWidth_ * 2, 0);
+  }
+
+protected:
+  void resizeEvent(QResizeEvent* event) override
+  {
+    QSpinBox::resizeEvent(event);
+    const int buttonHeight = std::max(0, height() - 2);
+    incrementButton_->setGeometry(width() - stepButtonWidth_ * 2 - 1, 1,
+                                  stepButtonWidth_, buttonHeight);
+    decrementButton_->setGeometry(width() - stepButtonWidth_ - 1, 1,
+                                  stepButtonWidth_, buttonHeight);
+    incrementButton_->raise();
+    decrementButton_->raise();
+  }
+
+private:
+  static constexpr int stepButtonWidth_ = 24;
+  QToolButton* incrementButton_ = nullptr;
+  QToolButton* decrementButton_ = nullptr;
+};
+
 class SeekSlider final : public QSlider
 {
 public:
@@ -79,6 +130,7 @@ QLabel* sectionLabel(const QString& text)
   QFont font = label->font();
   font.setBold(true);
   label->setFont(font);
+  label->setObjectName("sectionHeading");
   return label;
 }
 
@@ -150,6 +202,7 @@ QWidget* MainWindow::createTransportPanel()
   transportRow->addStretch();
 
   openFileButton_ = new QPushButton("Open File...");
+  openFileButton_->setObjectName("primaryButton");
   saveFileButton_ = new QPushButton("Save to file...");
   aboutButton_ = new QPushButton("About");
   helpButton_ = new QPushButton("Help");
@@ -162,9 +215,9 @@ QWidget* MainWindow::createTransportPanel()
 
   auto* cueRow = new QHBoxLayout;
   timeLabel_ = new QLabel("0:00:00");
+  timeLabel_->setObjectName("timeDisplay");
   timeLabel_->setAlignment(Qt::AlignCenter);
   timeLabel_->setMinimumWidth(112);
-  timeLabel_->setStyleSheet("QLabel { background: #101214; color: #eef2f5; border-radius: 4px; padding: 6px; font-size: 22px; }");
   cueSlider_ = new SeekSlider;
   cueSlider_->setRange(0, 1000);
   cueSlider_->setValue(0);
@@ -206,8 +259,7 @@ QWidget* MainWindow::createLoopPanel()
     QSpinBox* frame = nullptr;
     layout->addWidget(new QLabel(label), row, 0);
     for (int column = 1; column <= 3; ++column) {
-      auto* box = new QSpinBox;
-      box->setButtonSymbols(QAbstractSpinBox::PlusMinus);
+      auto* box = new TimeSpinBox;
       box->setMaximum(column == 1 ? 32767 : (column == 2 ? 59 : 99));
       box->setWrapping(column != 1);
       box->setKeyboardTracking(false);
@@ -588,7 +640,7 @@ void MainWindow::addMessage(const QString& message)
 {
   const int row = messages_->rowCount();
   messages_->insertRow(row);
-  messages_->setItem(row, 0, new QTableWidgetItem(QTime::currentTime().toString("HH:mm:ss")));
+  messages_->setItem(row, 0, new QTableWidgetItem(QTime::currentTime().toString("h:mm:ss AP")));
   messages_->setItem(row, 1, new QTableWidgetItem(message));
   messages_->scrollToBottom();
 }

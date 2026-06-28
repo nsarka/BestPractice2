@@ -2,6 +2,7 @@
 
 #include <QApplication>
 #include <QFileInfo>
+#include <QFile>
 #include <QIcon>
 
 int main(int argc, char* argv[])
@@ -10,6 +11,10 @@ int main(int argc, char* argv[])
   QApplication::setApplicationName("BestPractice");
   QApplication::setOrganizationName("BestPractice");
   QApplication::setWindowIcon(QIcon(":/app.ico"));
+  QFile theme(":/theme.qss");
+  if (theme.open(QIODevice::ReadOnly)) {
+    app.setStyleSheet(QString::fromUtf8(theme.readAll()));
+  }
 
   MainWindow window;
   window.show();
