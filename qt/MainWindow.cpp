@@ -119,12 +119,13 @@ MainWindow::MainWindow(QWidget* parent)
 
   layout->addWidget(createTransportPanel(), 0, 0, 1, 2);
   layout->addWidget(createLoopPanel(), 1, 0, Qt::AlignTop);
-  layout->addWidget(createMessagesPanel(), 2, 0);
-  layout->addWidget(createProcessingTabs(), 1, 1, 2, 1);
+  layout->addWidget(createVolumePanel(), 2, 0);
+  layout->addWidget(createMessagesPanel(), 3, 0);
+  layout->addWidget(createProcessingTabs(), 1, 1, 3, 1);
 
   layout->setColumnStretch(0, 4);
   layout->setColumnStretch(1, 5);
-  layout->setRowStretch(2, 1);
+  layout->setRowStretch(3, 1);
 
   setCentralWidget(root);
   statusBar()->showMessage("Ready");
@@ -150,9 +151,13 @@ QWidget* MainWindow::createTransportPanel()
 
   openFileButton_ = new QPushButton("Open File...");
   saveFileButton_ = new QPushButton("Save to file...");
+  aboutButton_ = new QPushButton("About");
+  helpButton_ = new QPushButton("Help");
   saveFileButton_->setEnabled(false);
   transportRow->addWidget(openFileButton_);
   transportRow->addWidget(saveFileButton_);
+  transportRow->addWidget(aboutButton_);
+  transportRow->addWidget(helpButton_);
   layout->addLayout(transportRow);
 
   auto* cueRow = new QHBoxLayout;
@@ -169,16 +174,17 @@ QWidget* MainWindow::createTransportPanel()
   cueRow->addWidget(cueSlider_, 1);
   layout->addLayout(cueRow);
 
-  auto* footer = new QHBoxLayout;
-  footer->addWidget(new QLabel("Volume"));
-  volumeSlider_ = horizontalSlider(0, 255, 192);
-  footer->addWidget(volumeSlider_, 1);
-  aboutButton_ = new QPushButton("About");
-  helpButton_ = new QPushButton("Help");
-  footer->addWidget(aboutButton_);
-  footer->addWidget(helpButton_);
-  layout->addLayout(footer);
+  return panel;
+}
 
+QWidget* MainWindow::createVolumePanel()
+{
+  auto* panel = new QWidget;
+  auto* layout = new QHBoxLayout(panel);
+  layout->setContentsMargins(0, 0, 0, 0);
+  layout->addWidget(new QLabel("Volume"));
+  volumeSlider_ = horizontalSlider(0, 255, 192);
+  layout->addWidget(volumeSlider_, 1);
   return panel;
 }
 

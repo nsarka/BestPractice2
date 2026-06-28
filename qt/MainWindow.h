@@ -32,6 +32,7 @@ protected:
 
 private:
   QWidget* createTransportPanel();
+  QWidget* createVolumePanel();
   QWidget* createLoopPanel();
   QWidget* createProcessingTabs();
   QWidget* createMessagesPanel();
