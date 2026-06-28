@@ -5,6 +5,27 @@ pitch, looping difficult passages, and reducing centered vocals. This version
 uses Qt 6 and the original BestPractice DSP algorithms through a modern CMake
 build.
 
+## Why?
+
+BestPractice was made to give musicians a free practice tool for changing the
+speed of recorded music without producing the pitch shift associated with
+playing a record at the wrong speed. It can also change pitch without changing
+tempo, making it possible to match a differently tuned instrument or move a song
+into a more comfortable key.
+
+The original project began because comparable tools commonly cost money, and
+its author wanted to prove that a free alternative could be built.
+
+You might use BestPractice to:
+
+- Slow down a difficult solo until every note is clear.
+- Transcribe music that moves too quickly at its original tempo.
+- Tune a recording to your instrument instead of retuning your instrument.
+- Change a song's key to better suit your voice.
+- Slow down spoken examples while learning a language.
+- Experiment with audio and digital signal processing.
+- Discover whether a very serious ballad works at rave speed.
+
 ## Features
 
 - WAV and MP3 playback with progressive decoding.
