@@ -1,0 +1,52 @@
+# Build directories
+/build/
+/build-*/
+/out/
+/cmake-build-*/
+
+# CMake and Ninja intermediates
+CMakeUserPresets.json
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+CTestTestfile.cmake
+build.ninja
+.ninja_deps
+.ninja_log
+compile_commands.json
+
+# Compiled binaries and libraries
+*.exe
+*.dll
+*.lib
+*.a
+*.o
+*.obj
+*.res
+*.exp
+*.ilk
+*.pdb
+*.idb
+*.pch
+*.gch
+*.tds
+*.map
+
+# Qt generated files
+moc_*.cpp
+qrc_*.cpp
+ui_*.h
+*_autogen/
+
+# Compiled documentation
+*.chm
+*.hlp
+
+# IDE and operating-system files
+.vs/
+.vscode/
+*.suo
+*.user
+*.user.*
+.DS_Store
+Thumbs.db

@@ -1,0 +1,232 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: BestPractice 0.91\n"
+"POT-Creation-Date: 2005-08-22 11:09+0200\n"
+"PO-Revision-Date: 2006-10-30 20:06+0100\n"
+"Last-Translator: \n"
+"Language-Team: Robert Moerland\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Poedit-Language: Dutch\n"
+"X-Poedit-Country: NETHERLANDS\n"
+
+msgid " cents"
+msgstr " cento"
+
+msgid " semitone(s)"
+msgstr " semitono(i)"
+
+msgid "&About"
+msgstr "Info su..."
+
+msgid "&Cancel"
+msgstr "&Annulla"
+
+msgid "&Continue"
+msgstr "&Continua"
+
+msgid "&Help"
+msgstr "&Guida"
+
+msgid "&Karaoke"
+msgstr "&Karaoke"
+
+msgid "Lan&guage"
+msgstr "&Lingua"
+
+msgid "&Loop"
+msgstr "Ciclo"
+
+msgid "&Now!"
+msgstr "&Ora!"
+
+msgid "&Open File..."
+msgstr "&Apri File..."
+
+msgid "&Refresh CD"
+msgstr "&Ricarica CD"
+
+msgid "&Replay"
+msgstr "&Ripeti"
+
+msgid "&Save to file..."
+msgstr "&Salva..."
+
+msgid "&Select CD Track"
+msgstr "&Seleziona Traccia CD"
+
+msgid "1/100 s"
+msgstr "1/100 s"
+
+msgid "About BestPractice"
+msgstr "Info su  BestPractice"
+
+msgid ""
+"All Supported files|*.wav;*.mp3|Wave files (*.wav)|*.wav|MP3 files (*.mp3)|*."
+"mp3"
+msgstr ""
+"Tutti i files Supportati|*.wav;*.mp3|Wave files (*.wav)|*.wav|MP3 files (*."
+"mp3)|*.mp3"
+
+msgid "Anti-aliasing filter"
+msgstr "Filtro Correzione Frequenze"
+
+msgid "Bass pass-through frequency range"
+msgstr "Gamma Frequenza Filtro Passa-Basso"
+
+msgid "Best so far..."
+msgstr "Meglio di così..."
+
+msgid "Cannot open the file requested! Is it in use?"
+msgstr "Non posso Aprire il file richiesto! E' già in uso?"
+
+msgid "Check C&DDB"
+msgstr "Controlla  CDDB"
+
+msgid "Choose Language"
+msgstr "Scegli la Lingua"
+
+msgid "Code"
+msgstr "Codice"
+
+msgid "Could not open the output file!"
+msgstr "Non ho potuto aprire il file in uscita!"
+
+msgid "Disc title:"
+msgstr "Titolo CD:"
+
+msgid "End"
+msgstr "Fine"
+
+msgid "Intermediate"
+msgstr "Intermedia"
+
+msgid "Karaoke &mode"
+msgstr "&modalità Karaoke&"
+
+msgid "Language"
+msgstr "Cambia Lingua"
+
+msgid "Left"
+msgstr "Sinistra"
+
+msgid "Loop Controls"
+msgstr "Controllo Riproduzione Ciclica"
+
+msgid "Loop end must be after loop start."
+msgstr "Errore: Inizio Ciclo dopo punto Finale !!"
+
+msgid "Loop start has to be before loop end!"
+msgstr "Errore: Inizio Ciclo dopo punto Finale !!"
+
+msgid "Low"
+msgstr "Bassa"
+
+msgid "Message"
+msgstr "Messaggio"
+
+msgid "Messages:"
+msgstr "Messaggi:"
+
+msgid "N/A"
+msgstr "N/D"
+
+msgid "No CD-ROM drives were found! Cd reading is disabled."
+msgstr "Nessun Lettore CD-ROM Trovato! La lettura del CD è disabilitata."
+
+msgid "No disc data available"
+msgstr "Nessun dato disponibile sul disco"
+
+msgid "No&w!"
+msgstr "Ora!"
+
+msgid "P&ause"
+msgstr "P&ausa"
+
+msgid "Pa&use"
+msgstr "Pa&usa"
+
+msgid "Pick drive"
+msgstr "Seleziona Lettore CD/DVD"
+
+msgid "Pitch fine adjust"
+msgstr "Controllo Fine Tonalità"
+
+msgid "Playing CD Track: "
+msgstr "Riproduzione Traccia: "
+
+msgid "Playing file: "
+msgstr "Riproduzione File: "
+
+msgid "Playing pitch"
+msgstr "Tonalità Riproduzione"
+
+msgid "Playing speed"
+msgstr "Velocità Riproduzione"
+
+msgid "Processing..."
+msgstr "Elaborazione..."
+
+msgid "Querying wwww.freedb.org ..."
+msgstr "Interrogazione www.freedb.org ..."
+
+msgid "Right"
+msgstr "Destra"
+
+msgid "Select &Language"
+msgstr "Seleziona Lingua"
+
+msgid "Select and Play &CD track"
+msgstr "Seleziona e Riproduci la traccia &CD"
+
+msgid "Slide for optimal vocal suppresion"
+msgstr "Controllo Soppressione Voce"
+
+msgid "Something went wrong, no disc data available"
+msgstr "Qualcosa è andato male, nessun dato disponibile sul disco"
+
+msgid "Sorry, there is no codec available to decode MP3 files."
+msgstr "Spiacenti, non c'è un codec valido per riprodurre MP3."
+
+msgid "Sorry, this file format is not supported."
+msgstr "Spiacenti, questo formato non è supportato."
+
+msgid "Start"
+msgstr "Inizio"
+
+msgid "T&ime and Pitch"
+msgstr "Tempi e Tono"
+
+msgid "The file does not seem to be a valid file!"
+msgstr "Il file non sembra essere in un formato compatibile!"
+
+msgid "Time"
+msgstr "Orario"
+
+msgid "Time-stretch Quality"
+msgstr "Qualità Modifica Tempi"
+
+msgid "Track #"
+msgstr "Traccia"
+
+msgid "Track Title"
+msgstr "Titolo"
+
+msgid "Treble pass-through frequency range"
+msgstr "Gamma Frequenza Filtro Passa-Alto"
+
+msgid "Unable to read Table of Contents"
+msgstr "Impossibile leggere Indice"
+
+msgid "Volume"
+msgstr "Volume"
+
+msgid "Wave file (*.wav)|*.wav"
+msgstr "Wave file (*.wav)|*.wav"
+
+msgid "min"
+msgstr "min"
+
+msgid "sec"
+msgstr "sec"

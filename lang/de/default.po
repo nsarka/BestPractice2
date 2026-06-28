@@ -1,0 +1,401 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: BestPractice 0.91\n"
+"POT-Creation-Date: 2005-08-22 11:09+0200\n"
+"PO-Revision-Date: 2005-11-19 10:03+0100\n"
+"Last-Translator: Robert Moerland\n"
+"Language-Team: Robert Moerland\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Poedit-Language: German\n"
+"X-Poedit-Country: GERMANY\n"
+
+#. AboutX..Caption
+#: AboutBoxX.dfm:5
+msgid "About BestPractice"
+msgstr "Über BestPractice"
+
+#. ILangForm..Caption
+#: LangForm.dfm:6
+msgid "Choose Language"
+msgstr "Sprachwahl"
+
+#. ILangForm..LVLangs......Caption
+#: LangForm.dfm:23
+msgid "Lan&guage"
+msgstr "Sprache"
+
+# Language code, like 'nl', 'de' or 'en_US'
+#. ILangForm..LVLangs......Caption
+#: LangForm.dfm:28
+msgid "Code"
+msgstr "Code"
+
+#. ILangForm..OKBtn..Caption
+#: LangForm.dfm:40
+msgid "Select &Language"
+msgstr "Sprachwah&l"
+
+#. ILangForm..Button2..Caption
+#. ProgressFrm..Button1..Caption
+#: LangForm.dfm:50
+#: ProgressForm.dfm:34
+msgid "&Cancel"
+msgstr "Abbre&chen"
+
+#. BPMain..Label5..Caption
+#: Main.dfm:40
+msgid "Disc title:"
+msgstr "CD Titel:"
+
+#. BPMain..Label3..Caption
+#: Main.dfm:54
+msgid "Pick drive"
+msgstr "CD-Laufwerk wählen"
+
+#. BPMain..Label6..Caption
+#: Main.dfm:68
+msgid "Messages:"
+msgstr "Meldungen:"
+
+#. BPMain..Label11..Caption
+#: Main.dfm:118
+msgid "Volume"
+msgstr "Volume"
+
+#. BPMain..RefreshCDBtn..Caption
+#. BPMain..TrackListMenu..RefreshCD1..Caption
+#: Main.dfm:144
+#: Main.dfm:1124
+msgid "&Refresh CD"
+msgstr "Aktualisie&re CD"
+
+#. BPMain..CheckCDDB..Caption
+#: Main.dfm:160
+msgid "Check C&DDB"
+msgstr "Nutze CD&DB"
+
+#. BPMain..AboutBtn..Caption
+#: Main.dfm:171
+msgid "&About"
+msgstr "Ü&ber"
+
+#. BPMain..TrackList......Caption
+#: Main.dfm:189
+msgid "Track #"
+msgstr "Track Nummer"
+
+#. BPMain..TrackList......Caption
+#: Main.dfm:194
+msgid "Track Title"
+msgstr "Track Titel"
+
+#. BPMain..HelpBtn..Caption
+#: Main.dfm:221
+msgid "&Help"
+msgstr "&Hilfe"
+
+#. BPMain..SelectTrackBtn..Caption
+#: Main.dfm:237
+msgid "&Select CD Track"
+msgstr "&Wähle CD Track"
+
+#. BPMain..PageControl1..TabSheet1..Caption
+#: Main.dfm:259
+msgid "T&ime and Pitch"
+msgstr "Ze&it und Tonhöhe"
+
+#. BPMain..PageControl1..TabSheet1..Label2..Caption
+#: Main.dfm:266
+msgid "Playing speed"
+msgstr "Abspielgeschwindigkeit"
+
+#. BPMain..PageControl1..TabSheet1..Label7..Caption
+#: Main.dfm:295
+msgid "Time-stretch Quality"
+msgstr "Qualität der Zeitdehnung"
+
+#. BPMain..PageControl1..TabSheet1..Label8..Caption
+#: Main.dfm:309
+msgid "Playing pitch"
+msgstr "Tonhöhe beim Abspielen"
+
+#. BPMain..PageControl1..TabSheet1..Label9..Caption
+#: Main.dfm:338
+msgid "Pitch fine adjust"
+msgstr "Feinabstimmung der Tonhöhe"
+
+#. BPMain..PageControl1..TabSheet1..AlgoBox..Text
+#. BPMain..PageControl1..TabSheet1..AlgoBox....Items.Strings
+#: Main.dfm:391
+#: Main.dfm:395
+msgid "Best so far..."
+msgstr "Bislang beste..."
+
+#. BPMain..PageControl1..TabSheet1..AlgoBox....Items.Strings
+#: Main.dfm:393
+msgid "Low"
+msgstr "Niedrig"
+
+#. BPMain..PageControl1..TabSheet1..AlgoBox....Items.Strings
+#: Main.dfm:394
+msgid "Intermediate"
+msgstr "Mittelmäßig"
+
+#. BPMain..PageControl1..TabSheet1..FilterBox..Caption
+#: Main.dfm:427
+msgid "Anti-aliasing filter"
+msgstr "Anti-Alias filter"
+
+#. BPMain..PageControl1..TabSheet2..Caption
+#: Main.dfm:486
+msgid "&Karaoke"
+msgstr "&Karaoke"
+
+#. BPMain..PageControl1..TabSheet2..Label12..Caption
+#: Main.dfm:500
+msgid "Left"
+msgstr "Links"
+
+#. BPMain..PageControl1..TabSheet2..Label13..Caption
+#: Main.dfm:507
+msgid "Right"
+msgstr "Rechts"
+
+#. BPMain..PageControl1..TabSheet2..Label14..Caption
+#: Main.dfm:521
+msgid "Slide for optimal vocal suppresion"
+msgstr "Schieber für optimale Gesangsunterdrückung"
+
+#. BPMain..PageControl1..TabSheet2..Label16..Caption
+#: Main.dfm:528
+msgid "Bass pass-through frequency range"
+msgstr "Tiefpass-Bandbreite"
+
+#. BPMain..PageControl1..TabSheet2..Label17..Caption
+#: Main.dfm:535
+msgid "Treble pass-through frequency range"
+msgstr " Hochpass Bandbreite"
+
+#. BPMain..PageControl1..TabSheet2..KaraokeBox..Caption
+#: Main.dfm:544
+msgid "Karaoke &mode"
+msgstr "Karaoke &Modus"
+
+#. BPMain..Messages......Caption
+#: Main.dfm:593
+msgid "Time"
+msgstr "Zeit"
+
+#. BPMain..Messages......Caption
+#: Main.dfm:598
+msgid "Message"
+msgstr "Meldung"
+
+#. BPMain..OpenFileBtn..Caption
+#: Main.dfm:610
+msgid "&Open File..."
+msgstr "&Öffne Datei..."
+
+#. BPMain..GrpLoopControls..Caption
+#: Main.dfm:625
+msgid "Loop Controls"
+msgstr "Schleifen Kontrolle"
+
+#. BPMain..GrpLoopControls..Start..Caption
+#: Main.dfm:667
+msgid "Start"
+msgstr "Start"
+
+#. BPMain..GrpLoopControls..End..Caption
+#: Main.dfm:674
+msgid "End"
+msgstr "Ende"
+
+#. BPMain..GrpLoopControls..Label21..Caption
+#: Main.dfm:681
+msgid "min"
+msgstr "min"
+
+#. BPMain..GrpLoopControls..Label22..Caption
+#: Main.dfm:688
+msgid "sec"
+msgstr "sec"
+
+#. BPMain..GrpLoopControls..Label23..Caption
+#: Main.dfm:695
+msgid "1/100 s"
+msgstr "1/100 s"
+
+#. BPMain..GrpLoopControls..LoopStartBtn..Caption
+#: Main.dfm:703
+msgid "&Now!"
+msgstr "&Jetzt!"
+
+#. BPMain..GrpLoopControls..LoopEndBtn..Caption
+#: Main.dfm:720
+msgid "No&w!"
+msgstr "Jet&zt!"
+
+#. BPMain..GrpLoopControls..LoopCheck..Caption
+#: Main.dfm:883
+msgid "&Loop"
+msgstr "Sch&leife"
+
+#. BPMain..PauseBtn..Caption
+#: Main.dfm:894
+msgid "Pa&use"
+msgstr "Pa&use"
+
+#. BPMain..SaveBtn..Caption
+#: Main.dfm:911
+msgid "&Save to file..."
+msgstr "S&peicher als..."
+
+#. BPMain..LangBtn..Caption
+#: Main.dfm:940
+msgid "&Language"
+msgstr "&Sprache"
+
+#. BPMain..OpenDialog....DefaultExt
+#: Main.dfm:948
+msgid "All Supported files|*.wav;*.mp3|Wave files (*.wav)|*.wav|MP3 files (*.mp3)|*.mp3"
+msgstr "Alle unterstützten Formate |*.wav;*.mp3|Wave Datei (*.wav)|*.wav|MP3 Datei (*.mp3)|*.mp3"
+
+#. BPMain..SaveDialog..Filter
+#: Main.dfm:960
+msgid "Wave file (*.wav)|*.wav"
+msgstr "Wave Datei (*.wav)|*.wav"
+
+#. BPMain..TrackListMenu..Selplaytrack..Caption
+#: Main.dfm:1118
+msgid "&Play CD track"
+msgstr "Spiele &CD Track"
+
+#. ProgressFrm..Caption
+#: ProgressForm.dfm:6
+msgid "Processing..."
+msgstr "Verarbeiten..."
+
+#: C:\Documents
+#: and Settings\Robert\My Documents\Projects\bp\Main.cpp:129
+#: and Settings\Robert\My Documents\Projects\bp\Main.cpp:849
+msgid "Cannot open the file requested! Is it in use?"
+msgstr "Kann Datei nicht öffnen! Ist sie schon in Gebrauch?"
+
+#: C:\Documents
+#: and Settings\Robert\My Documents\Projects\bp\Main.cpp:132
+#: and Settings\Robert\My Documents\Projects\bp\Main.cpp:852
+msgid "The file does not seem to be a valid file!"
+msgstr "Dateiformat scheint nicht gültig zu sein!"
+
+#: C:\Documents
+#: and Settings\Robert\My Documents\Projects\bp\Main.cpp:135
+#: and Settings\Robert\My Documents\Projects\bp\Main.cpp:855
+msgid "Sorry, this file format is not supported."
+msgstr " Entschuldigung, dieses Dateiformat wird nicht unterstützt"
+
+#: C:\Documents
+#: and Settings\Robert\My Documents\Projects\bp\Main.cpp:138
+#: and Settings\Robert\My Documents\Projects\bp\Main.cpp:858
+msgid "Sorry, there is no codec available to decode MP3 files."
+msgstr "Sorry, codec zur MP3-Entschlüsselung nicht verfügbar"
+
+#: C:\Documents
+#: and Settings\Robert\My Documents\Projects\bp\Main.cpp:144
+#: and Settings\Robert\My Documents\Projects\bp\Main.cpp:864
+msgid "Playing file: "
+msgstr "Abgespielte Datei: "
+
+#: C:\Documents
+#: and Settings\Robert\My Documents\Projects\bp\Main.cpp:178
+msgid "&Replay"
+msgstr "N&eustart"
+
+#: C:\Documents
+#: and Settings\Robert\My Documents\Projects\bp\Main.cpp:295
+msgid "Unable to read Table of Contents"
+msgstr "Kann Inhaltsverzeichnis nicht lesen"
+
+#: C:\Documents
+#: and Settings\Robert\My Documents\Projects\bp\Main.cpp:312
+msgid "Querying wwww.freedb.org ..."
+msgstr "Abfrage bei www.freedb.org läuft..."
+
+#: C:\Documents
+#: and Settings\Robert\My Documents\Projects\bp\Main.cpp:340
+msgid "Something went wrong, no disc data available"
+msgstr "Etwas schlug fehl, keine Daten zu dieser CD verfügbar"
+
+# N/A = Not Available
+#: C:\Documents
+#: and Settings\Robert\My Documents\Projects\bp\Main.cpp:345
+#: and Settings\Robert\My Documents\Projects\bp\Main.cpp:347
+#: and Settings\Robert\My Documents\Projects\bp\Main.cpp:358
+#: and Settings\Robert\My Documents\Projects\bp\Main.cpp:360
+#: and Settings\Robert\My Documents\Projects\bp\Main.cpp:370
+#: and Settings\Robert\My Documents\Projects\bp\Main.cpp:372
+msgid "N/A"
+msgstr "N/B"
+
+#: C:\Documents
+#: and Settings\Robert\My Documents\Projects\bp\Main.cpp:353
+msgid "No disc data available"
+msgstr "Keine Informationen zur CD verfügbar"
+
+#: C:\Documents
+#: and Settings\Robert\My Documents\Projects\bp\Main.cpp:410
+msgid "No CD-ROM drives were found! Cd reading is disabled."
+msgstr "Kein CD-Spieler gefunden! CD-abspielen ist ausgeschaltet."
+
+#: C:\Documents
+#: and Settings\Robert\My Documents\Projects\bp\Main.cpp:433
+#: and Settings\Robert\My Documents\Projects\bp\Main.cpp:660
+#: and Settings\Robert\My Documents\Projects\bp\Main.cpp:661
+msgid " semitone(s)"
+msgstr " Halbtonstufe"
+
+#: C:\Documents
+#: and Settings\Robert\My Documents\Projects\bp\Main.cpp:434
+#: and Settings\Robert\My Documents\Projects\bp\Main.cpp:669
+#: and Settings\Robert\My Documents\Projects\bp\Main.cpp:671
+msgid " cents"
+msgstr " Hundertstel"
+
+#: C:\Documents
+#: and Settings\Robert\My Documents\Projects\bp\Main.cpp:807
+msgid "&Continue"
+msgstr "&Weiter"
+
+#: C:\Documents
+#: and Settings\Robert\My Documents\Projects\bp\Main.cpp:812
+#: and Settings\Robert\My Documents\Projects\bp\Main.cpp:817
+msgid "P&ause"
+msgstr "P&ause"
+
+#: C:\Documents
+#: and Settings\Robert\My Documents\Projects\bp\Main.cpp:895
+msgid "Loop end must be after loop start."
+msgstr "Schleifenende muss nach dem Schleifenstart sein."
+
+#: C:\Documents
+#: and Settings\Robert\My Documents\Projects\bp\Main.cpp:938
+msgid "Could not open the output file!"
+msgstr "Konnte Ausgebedatei nicht öffnen!"
+
+#: C:\Documents
+#: and Settings\Robert\My Documents\Projects\bp\Main.cpp:1181
+msgid "Playing CD Track: "
+msgstr "Spiele CD Track: "
+
+#: C:\Documents
+#: and Settings\Robert\My Documents\Projects\bp\Main.cpp:1338
+msgid "Loop start has to be before loop end!"
+msgstr "Schleifenstart muß vor Schleifenende sein!"
+

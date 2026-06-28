@@ -1,0 +1,353 @@
+##v##00.4.50
+EditHelpFileTitle.Text=BestPractice Help
+form2.STextForeHeadline.Color=16777215
+form2.STextForeText.Color=0
+form2.STextBackHeadline.Color=12845056
+form2.STextBackText.Color=14876671
+form2.STextHeadlineFont.Caption=Arial
+form2.STextTextFont.Caption=Arial
+form2.sTextFontSizeForHeadline.Caption=12
+form2.sTextFontSizeForText.Caption=9
+form2.CBoxBold.Checked=1
+form2.CBoxNoForeColor.Checked=0
+form2.CBoxLanguageID.ItemIndex=0
+form2.CBoxCharSet.ItemIndex=0
+form2.EditContents.Text=Contents
+form2.EditFrontpageName.Text=Front page with index
+form2.CBoxDontMakeFrontpage.Checked=1
+form2.EditLogoPath.Text=
+form2.EditFrontpageButtonCaption.Text=Front page
+form2.RGroupHorizontalAlignment.ItemIndex=0
+form2.RGroupVerticalAlignment.ItemIndex=0
+form2.CBoxBlankLineBeforeEachHeading.Checked=1
+form2.CBoxMakeFrontPageButton.Checked=0
+form2.SpinEditFrontpageIDnumber.Value=9999
+form2.CBoxAddAboutMenu.Checked=0
+form2.EditAboutMenuCaption.Text=&About this help file...
+form2.CBoxPopupPagesForAboutMenu.Tag=-1
+form2.EditConstantNameFilePrefix.Text=pageConstants_
+form2.EditConstantNameFileExt.Text=txt
+form5.sTextColor1=0
+form5.sTextColor2=9743070
+form5.sTextColor3=12386403
+form5.sTextColor4=255
+form5.sTextColor5=8421376
+form5.sTextColor6=8650752
+form5.sTextColor7=33280
+form5.sTextColor8=32896
+form5.sTextColor9=13026246
+form5.sTextColor10=16711680
+form5.sTextColor11=65280
+form5.sTextColor12=8651007
+form5.sTextColor13=16777215
+form5.sTextColor14=16757429
+form5.sTextColor15=9764863
+form5.sTextColor16=8421504
+form5.sTextComment1=
+form5.sTextComment2=
+form5.sTextComment3=
+form5.sTextComment4=
+form5.sTextComment5=
+form5.sTextComment6=
+form5.sTextComment7=
+form5.sTextComment8=
+form5.sTextComment9=
+form5.sTextComment10=
+form5.sTextComment11=
+form5.sTextComment12=
+form5.sTextComment13=
+form5.sTextComment14=
+form5.sTextComment15=
+form5.sTextComment16=
+NumOfPages=31
+------------ end of project settings / page settings follow ------------
+pageC.pages[0].ImageIndex=0
+pageTitle(0).Text=Audio Source
+getPageConstantLabel(0).Caption=AudioSource
+getPageContentHeaderLabel(0).Caption=
+pageKeywords(0).Text=
+pageC.pages[1].ImageIndex=0
+pageTitle(1).Text=Refresh CD
+getPageConstantLabel(1).Caption=RefreshCD
+getPageContentHeaderLabel(1).Caption=
+pageKeywords(1).Text=
+pageC.pages[2].ImageIndex=0
+pageTitle(2).Text=Check CDDB
+getPageConstantLabel(2).Caption=CheckCDDB
+getPageContentHeaderLabel(2).Caption=
+pageKeywords(2).Text=
+pageC.pages[3].ImageIndex=0
+pageTitle(3).Text=Play Button
+getPageConstantLabel(3).Caption=PlayButton
+getPageContentHeaderLabel(3).Caption=
+pageKeywords(3).Text=
+pageC.pages[4].ImageIndex=0
+pageTitle(4).Text=Pause Button
+getPageConstantLabel(4).Caption=PauseButton
+getPageContentHeaderLabel(4).Caption=
+pageKeywords(4).Text=
+pageC.pages[5].ImageIndex=0
+pageTitle(5).Text=Open File
+getPageConstantLabel(5).Caption=OpenFile
+getPageContentHeaderLabel(5).Caption=
+pageKeywords(5).Text=
+pageC.pages[6].ImageIndex=0
+pageTitle(6).Text=A/B/Cancel Loop Buttons
+getPageConstantLabel(6).Caption=ABCancelLoop
+getPageContentHeaderLabel(6).Caption=
+pageKeywords(6).Text=
+pageC.pages[7].ImageIndex=0
+pageTitle(7).Text=Play Position Slider
+getPageConstantLabel(7).Caption=PlayPosition
+getPageContentHeaderLabel(7).Caption=
+pageKeywords(7).Text=
+pageC.pages[8].ImageIndex=0
+pageTitle(8).Text=Playing Pitch Slider
+getPageConstantLabel(8).Caption=PlayingPitch
+getPageContentHeaderLabel(8).Caption=
+pageKeywords(8).Text=
+pageC.pages[9].ImageIndex=0
+pageTitle(9).Text=Pitch Fine Adjust Slider
+getPageConstantLabel(9).Caption=PitchFineAdjust
+getPageContentHeaderLabel(9).Caption=
+pageKeywords(9).Text=
+pageC.pages[10].ImageIndex=0
+pageTitle(10).Text=Playing Speed Slider
+getPageConstantLabel(10).Caption=PlayingSpeed
+getPageContentHeaderLabel(10).Caption=
+pageKeywords(10).Text=
+pageC.pages[11].ImageIndex=0
+pageTitle(11).Text=Anti Alias filter
+getPageConstantLabel(11).Caption=AntiAlias
+getPageContentHeaderLabel(11).Caption=
+pageKeywords(11).Text=
+pageC.pages[12].ImageIndex=0
+pageTitle(12).Text=Time Stretch Quality
+getPageConstantLabel(12).Caption=TimeStretch
+getPageContentHeaderLabel(12).Caption=
+pageKeywords(12).Text=
+pageC.pages[13].ImageIndex=0
+pageTitle(13).Text=About
+getPageConstantLabel(13).Caption=About
+getPageContentHeaderLabel(13).Caption=
+pageKeywords(13).Text=
+pageC.pages[14].ImageIndex=0
+pageTitle(14).Text=Help
+getPageConstantLabel(14).Caption=Help
+getPageContentHeaderLabel(14).Caption=
+pageKeywords(14).Text=
+pageC.pages[15].ImageIndex=0
+pageTitle(15).Text=Track Title
+getPageConstantLabel(15).Caption=TrackTitle
+getPageContentHeaderLabel(15).Caption=
+pageKeywords(15).Text=
+pageC.pages[16].ImageIndex=0
+pageTitle(16).Text=Pick Drive
+getPageConstantLabel(16).Caption=PickDrive
+getPageContentHeaderLabel(16).Caption=
+pageKeywords(16).Text=
+pageC.pages[17].ImageIndex=0
+pageTitle(17).Text=Messages
+getPageConstantLabel(17).Caption=Messages
+getPageContentHeaderLabel(17).Caption=
+pageKeywords(17).Text=
+pageC.pages[18].ImageIndex=0
+pageTitle(18).Text=Time and Pitch
+getPageConstantLabel(18).Caption=
+getPageContentHeaderLabel(18).Caption=
+pageKeywords(18).Text=
+pageC.pages[19].ImageIndex=0
+pageTitle(19).Text=Karaoke
+getPageConstantLabel(19).Caption=
+getPageContentHeaderLabel(19).Caption=
+pageKeywords(19).Text=
+pageC.pages[20].ImageIndex=0
+pageTitle(20).Text=Karaoke-Mode
+getPageConstantLabel(20).Caption=
+getPageContentHeaderLabel(20).Caption=
+pageKeywords(20).Text=
+pageC.pages[21].ImageIndex=0
+pageTitle(21).Text=Voice suppresion slide
+getPageConstantLabel(21).Caption=
+getPageContentHeaderLabel(21).Caption=
+pageKeywords(21).Text=
+pageC.pages[22].ImageIndex=0
+pageTitle(22).Text=Bass pass-through frequency range
+getPageConstantLabel(22).Caption=
+getPageContentHeaderLabel(22).Caption=
+pageKeywords(22).Text=
+pageC.pages[23].ImageIndex=0
+pageTitle(23).Text=Treble pass-through frequency range
+getPageConstantLabel(23).Caption=
+getPageContentHeaderLabel(23).Caption=
+pageKeywords(23).Text=
+pageC.pages[24].ImageIndex=0
+pageTitle(24).Text=Save button
+getPageConstantLabel(24).Caption=
+getPageContentHeaderLabel(24).Caption=
+pageKeywords(24).Text=
+pageC.pages[25].ImageIndex=0
+pageTitle(25).Text=Volume Slider
+getPageConstantLabel(25).Caption=
+getPageContentHeaderLabel(25).Caption=
+pageKeywords(25).Text=
+pageC.pages[26].ImageIndex=0
+pageTitle(26).Text=Loop
+getPageConstantLabel(26).Caption=
+getPageContentHeaderLabel(26).Caption=
+pageKeywords(26).Text=
+pageC.pages[27].ImageIndex=0
+pageTitle(27).Text=Loop Point Up/Down arrows
+getPageConstantLabel(27).Caption=
+getPageContentHeaderLabel(27).Caption=
+pageKeywords(27).Text=
+pageC.pages[28].ImageIndex=0
+pageTitle(28).Text=reset buttons
+getPageConstantLabel(28).Caption=
+getPageContentHeaderLabel(28).Caption=
+pageKeywords(28).Text=
+pageC.pages[29].ImageIndex=0
+pageTitle(29).Text=Language
+getPageConstantLabel(29).Caption=
+getPageContentHeaderLabel(29).Caption=
+pageKeywords(29).Text=
+pageC.pages[30].ImageIndex=0
+pageTitle(30).Text=Previous Track
+getPageConstantLabel(30).Caption=
+getPageContentHeaderLabel(30).Caption=
+pageKeywords(30).Text=
+pageC.pages[31].ImageIndex=0
+pageTitle(31).Text=Next Track
+getPageConstantLabel(31).Caption=
+getPageContentHeaderLabel(31).Caption=
+pageKeywords(31).Text=
+------------ end of page titles / full text of pages follow ------------
+----- SHM ---- page 0 ---- 
+----- SHM ---- page 1 ---- 
+<b>Refresh CD</b>
+
+Press this button to make BestPractice re-read the table of contents of the audio CD in the drive you have selected. If <i>Check CDDB </i>is on, BestPractice will also query freecddb.org for disc and track title information.
+----- SHM ---- page 2 ---- 
+<b>Check CDDB</b>
+
+ If <i>Check CDDB</i> is enabled, BestPractice will query freecddb.org for disc and track title information when the <i>Refresh CD</i> button is pressed.
+----- SHM ---- page 3 ---- 
+<b>Play CD Button</b>
+
+The <i>Play CD </i> button will start playing the CD with the track that is highlighted in the track list. An icon \{bmc New Bitmap Image.bmp\} will appear, indicating the selected track. If no track is selected, the first track will play.
+----- SHM ---- page 4 ---- 
+<b>Pause Button</b>
+
+Press the <i>Pause</i> button to temporarily stop playing the audio. The button color will change to indicate that the button is activated. Pressing the button again will continue the play.
+----- SHM ---- page 5 ---- 
+<b>Open File</b>
+
+The button labeled <i>Open File</i> will show a dialog box where you can select a wave/MP3 file to use as the audio source. 
+----- SHM ---- page 6 ---- 
+<b>Now! Buttons</b>
+
+Pressing a <i>Now!</i> button will set the the loop point marker at the current playing position. Depending on which button is pressed, either the starting point or the end of the loop is set. To activate the loop, place a check mark in the <i>Loop</i> check box.
+----- SHM ---- page 7 ---- 
+<b>Play Position Slider</b>
+
+The <i>Play Position Slider</i> indicates the current position in the song. To skip forward or go back, drag and slide the thumb to the desired position.
+----- SHM ---- page 8 ---- 
+<b>Playing Pitch Slider</b>
+
+The <i>Playing Pitch Slider</i> allows you to detune the audio. Each step raises or lowers the audio with one semitone (1/12th of an octave).
+----- SHM ---- page 9 ---- 
+<b>Pitch Fine Adjust Slider</b>
+
+The <i>Pitch Fine Adjust Slider</i> allows fine control over the tonal height of the audio. Each steps raises or lowers the audio with one cent, where 1 cent is one-hundreth of a semitone.
+----- SHM ---- page 10 ---- 
+<b>Playing Speed Slider</b>
+
+The <i>Playing Speed Slider</i> controls the playing tempo of the song. 100% means that the song is played at its original tempo. 50% is halve of the original and 150% is 1.5 times the original tempo.
+----- SHM ---- page 11 ---- 
+<b>Anti Alias filter</b>
+
+If the audio is raised in tonal height, frequencies that are above the original sampling rate may occur. This causes aliasing, deteriorating the audio quality. An <i>Anti Alias Filter</i> can be applied, which removes those frequencies that without filtering would cause aliasing. The filter can be either <i>on</i> or <i>off</i>.
+
+- <i>Off (box not checked)</i>: no anti aliasing filter is applied
+- <i>On (box checked)</i>: aliasing is prevented. This is the recommended setting.
+----- SHM ---- page 12 ---- 
+<b>Time Stretch Quality</b>
+
+Here you can select the quality of the time-stretch algorithm. The default is the best setting there is in BestPractice. Only change this when you hear gaps in the audio, since the other algorithms will sound considerably less 'smooth'.
+
+This algorithm is also used if you only move the <i>Playing Pitch</i> slider!
+----- SHM ---- page 13 ---- 
+<b>About Button</b>
+
+Shows some information on BestPractice.
+----- SHM ---- page 14 ---- 
+<b>Help Button</b>
+
+Opens the help file.
+----- SHM ---- page 15 ---- 
+<b>Disc/Track Title</b>
+
+Here the number of tracks is shown and if <i>Check CDDB</i> is enabled, also the names of the tracks will appear. 
+Select the track that you'd like to play and then press the <i>\{bmc play2.bmp\} CD</i> button.
+----- SHM ---- page 16 ---- 
+<b>Pick Drive</b>
+
+If you want to use a CD as the source of the audio, you must pick the CD-Rom or DVD player that contains the CD to be played here.
+----- SHM ---- page 17 ---- 
+<b>Messages</b>
+
+Here some information on the current operation BestPractice is performing is shown.
+----- SHM ---- page 18 ---- 
+<b>Time and Pitch</b>
+
+This tab allows you to change the total duration of the song and the key in which it is played
+----- SHM ---- page 19 ---- 
+<b>Karaoke</b>
+
+This tab allow you to suppres voices in a song. Results may vary...
+----- SHM ---- page 20 ---- 
+<b>Karaoke mode</b>
+
+Check this box to apply voice suppression to the song
+----- SHM ---- page 21 ---- 
+<b>Voice suppression slide</b>
+
+Move the slider to achieve best voice suppression, if the voice to suppress is not situated exactly in the middle of the stereo panorama.
+----- SHM ---- page 22 ---- 
+<b>Bass pass-through frequency range</b>
+
+Voice is a limited band audio signal. Move the slider to the right to let bass audio pass the voice suppression unchanged. The more bass bandwidth you let pass, the more of the voice will also leak through.
+----- SHM ---- page 23 ---- 
+<b>Treble pass-through frequency range</b>
+
+Voice is a limited band audio signal. Move the slider to the right to let treble audio pass the voice suppression unchanged. The more treble bandwidth you let pass, the more of the voice will also leak through.
+----- SHM ---- page 24 ---- 
+<b>Save to File</b>
+
+Press this button to save the processed audio to disk. All settings like pitch, time stretching, karaoke etc. as they are at the moment of pressing the button are applied to the saved audio. 
+----- SHM ---- page 25 ---- 
+<b>Volume Slider</b>
+
+The volume can be controlled with this slider
+----- SHM ---- page 26 ---- 
+<b>Loop Check Box</b>
+
+Place a check mark here to activate the looping feature. You can select the loop point with the <i>Now! </i> buttons and the <i>loop point up/down arrow</i> controls.
+----- SHM ---- page 27 ---- 
+<b>Loop Point Up/Down arrows</b>
+
+Use these arrow controls to fine-tune the looping points.
+----- SHM ---- page 28 ---- 
+These buttons reset the corresponding control to the center position.
+----- SHM ---- page 29 ---- 
+<b>Language</b>
+
+This button enables a different language, if installed.
+----- SHM ---- page 30 ---- 
+<b>Previous Track</b>
+
+Goes back one track on the CD
+----- SHM ---- page 31 ---- 
+<b>Next Track</b>
+
+Goes forward one track on the CD
