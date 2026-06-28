@@ -57,6 +57,12 @@ if(BESTPRACTICE_BUILD_QT_FORMS)
         target_link_libraries(bestpractice_qt PRIVATE Qt6::Widgets Qt6::Multimedia bestpractice_core)
         target_include_directories(bestpractice_qt PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
 
+        add_custom_command(TARGET bestpractice_qt POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${CMAKE_CURRENT_SOURCE_DIR}/qt/help.html"
+                "$<TARGET_FILE_DIR:bestpractice_qt>/help.html"
+        )
+
         if(MSVC)
             target_compile_options(bestpractice_qt PRIVATE /W4 /permissive-)
         else()

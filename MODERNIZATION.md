@@ -57,16 +57,23 @@ BestPractice DSP classes for processing:
 - Karaoke vocal suppression with bass and treble pass-through controls.
 - Output volume.
 - A/B loop points and continuous looping.
-- Saving the processed result as a 16-bit stereo WAV file.
+- Progressive playback after an initial decoded buffer.
+- Drag-and-drop WAV/MP3 opening and original playback shortcuts.
+- Validated loop times and loop-region WAV export.
+- Asynchronous WAV export with progress and cancellation.
+- Local help from the Help button or F1.
 - Playback completion and decode/output error messages.
 
 Playback processing is now streamed through a bounded `QIODevice` into
 `QAudioSink`. Changing speed, pitch, quality, filtering, or karaoke settings
 restarts only the next unplayed DSP block at the current source position. It no
 longer renders the full song before an adjustment becomes audible. Full-track
-processing is reserved for WAV export.
+processing is reserved for WAV export. Decoding can continue while the initial
+buffer is already playing, and the streaming source grows if decoding is slower
+than playback.
 
-Audio-CD discovery and extraction remain on the legacy-backend migration list.
+Audio-CD discovery/extraction and runtime UI localization remain on the
+legacy-backend migration list.
 
 ## Configure And Build
 

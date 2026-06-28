@@ -31,6 +31,7 @@ namespace
 {
 constexpr int kBytesPerFrame = 4;
 constexpr qsizetype kSinkBufferFrames = 4096;
+constexpr int kProgressiveBufferSeconds = 2;
 
 class MemoryReader final : public AudioReader::TReader
 {
@@ -373,6 +374,25 @@ private:
   qint64 currentFrame_ = 0;
 };
 
+struct AudioExportSession
+{
+  AudioExportSession(const QString& outputPath, const QByteArray& source, int sampleRate,
+                     const AudioEngineParameters& parameters, qint64 start, qint64 end)
+    : path(outputPath), file(outputPath),
+      processor(std::make_unique<DspBlockProcessor>(source, sampleRate, parameters, start)),
+      startFrame(start), endFrame(end)
+  {
+  }
+
+  QString path;
+  QFile file;
+  std::unique_ptr<DspBlockProcessor> processor;
+  qint64 startFrame = 0;
+  qint64 endFrame = 0;
+  qint64 outputBytes = 0;
+  bool canceled = false;
+};
+
 AudioEngine::AudioEngine(QObject* parent)
   : QObject(parent), parameters_(std::make_unique<AudioEngineParameters>())
 {
@@ -396,6 +416,24 @@ AudioEngine::AudioEngine(QObject* parent)
     const QAudioBuffer buffer = decoder_->read();
     if (buffer.isValid()) {
       decodedAudio_.append(buffer.constData<char>(), buffer.byteCount());
+      const qint64 decodedFrames = decodedAudio_.size() / kBytesPerFrame;
+      if (!playbackStarted_
+          && decodedFrames >= sampleRate_ * kProgressiveBufferSeconds) {
+        startProgressivePlayback();
+      } else if (playbackStarted_ && !decodeComplete_
+                 && streamingSourceFrames_ - streamDevice_->currentFrame() <= sampleRate_
+                 && decodedFrames > streamingSourceFrames_) {
+        const qint64 resumeFrame = streamDevice_->currentFrame();
+        sink_->stop();
+        streamDevice_->setSource(decodedAudio_, sampleRate_, *parameters_);
+        streamDevice_->seekToFrame(resumeFrame);
+        streamingSourceFrames_ = decodedFrames;
+        durationMs_ = decodedFrames * 1000LL / sampleRate_;
+        emit durationChanged(durationMs_);
+        if (!userPaused_) {
+          sink_->start(streamDevice_);
+        }
+      }
     }
   });
   connect(decoder_, &QAudioDecoder::finished, this, [this] {
@@ -405,15 +443,23 @@ AudioEngine::AudioEngine(QObject* parent)
       return;
     }
 
+    decodeComplete_ = true;
     durationMs_ = decodedAudio_.size() / kBytesPerFrame * 1000LL / sampleRate_;
-    streamDevice_->setSource(decodedAudio_, sampleRate_, *parameters_);
-    emit processingChanged(false);
+    if (!playbackStarted_) {
+      startProgressivePlayback();
+    } else {
+      const qint64 resumeFrame = streamDevice_->currentFrame();
+      sink_->stop();
+      streamDevice_->setSource(decodedAudio_, sampleRate_, *parameters_);
+      streamDevice_->seekToFrame(resumeFrame);
+      streamingSourceFrames_ = decodedAudio_.size() / kBytesPerFrame;
+      if (!userPaused_) {
+        sink_->start(streamDevice_);
+      }
+    }
     emit durationChanged(durationMs_);
-    emit positionChanged(0);
-    emit message(QString("Streaming DSP ready: %1 seconds of stereo PCM.")
-      .arg(durationMs_ / 1000.0, 0, 'f', 1));
-    emit ready(sourcePath_);
-    sink_->start(streamDevice_);
+    emit decodeCompleted();
+    emit message("Audio decoding complete.");
   });
   connect(decoder_, qOverload<QAudioDecoder::Error>(&QAudioDecoder::error),
           this, [this](QAudioDecoder::Error) {
@@ -441,11 +487,16 @@ void AudioEngine::loadFile(const QString& path)
 
 void AudioEngine::beginDecode(const QString& path)
 {
+  cancelExport();
   decoder_->stop();
   sink_->stop();
   decodedAudio_.clear();
   sourcePath_ = path;
   durationMs_ = 0;
+  streamingSourceFrames_ = 0;
+  playbackStarted_ = false;
+  decodeComplete_ = false;
+  userPaused_ = false;
   emit durationChanged(0);
   emit positionChanged(0);
   emit processingChanged(true);
@@ -456,21 +507,24 @@ void AudioEngine::beginDecode(const QString& path)
 
 void AudioEngine::togglePlayback()
 {
-  if (!hasAudio()) {
+  if (!playbackStarted_) {
     return;
   }
 
   switch (sink_->state()) {
   case QtAudio::ActiveState:
     sink_->suspend();
+    userPaused_ = true;
     break;
   case QtAudio::SuspendedState:
     sink_->resume();
+    userPaused_ = false;
     break;
   default:
     if (streamDevice_->atEnd()) {
       streamDevice_->seekToFrame(0);
     }
+    userPaused_ = false;
     sink_->start(streamDevice_);
     break;
   }
@@ -478,7 +532,7 @@ void AudioEngine::togglePlayback()
 
 void AudioEngine::seek(qint64 milliseconds)
 {
-  if (!hasAudio()) {
+  if (!playbackStarted_) {
     return;
   }
   const bool resume = isPlaying();
@@ -490,6 +544,27 @@ void AudioEngine::seek(qint64 milliseconds)
   if (resume) {
     sink_->start(streamDevice_);
   }
+}
+
+void AudioEngine::startProgressivePlayback()
+{
+  if (playbackStarted_ || decodedAudio_.isEmpty()) {
+    return;
+  }
+
+  playbackStarted_ = true;
+  streamDevice_->setSource(decodedAudio_, sampleRate_, *parameters_);
+  streamingSourceFrames_ = decodedAudio_.size() / kBytesPerFrame;
+  if (durationMs_ <= 0) {
+    durationMs_ = decodedAudio_.size() / kBytesPerFrame * 1000LL / sampleRate_;
+  }
+  emit processingChanged(false);
+  emit durationChanged(durationMs_);
+  emit positionChanged(0);
+  emit message(QString("Playback started after buffering %1 seconds.")
+    .arg(decodedAudio_.size() / double(sampleRate_ * kBytesPerFrame), 0, 'f', 1));
+  emit ready(sourcePath_);
+  sink_->start(streamDevice_);
 }
 
 void AudioEngine::setVolume(int value)
@@ -562,49 +637,129 @@ void AudioEngine::updatePosition()
   emit positionChanged(position());
 }
 
-bool AudioEngine::saveProcessedWav(const QString& path, QString* errorMessage) const
+bool AudioEngine::startExport(const QString& path, qint64 startMilliseconds,
+                              qint64 endMilliseconds, QString* errorMessage)
 {
-  if (!hasAudio()) {
+  if (!decodeComplete_) {
     if (errorMessage) {
-      *errorMessage = "There is no processed audio to save.";
+      *errorMessage = "Please wait for audio decoding to complete before exporting.";
+    }
+    return false;
+  }
+  if (exportSession_) {
+    if (errorMessage) {
+      *errorMessage = "An export is already in progress.";
     }
     return false;
   }
 
-  QByteArray output;
-  const qint64 expectedBytes = decodedAudio_.size() * 1000LL
-    / std::max(1, parameters_->speed);
-  output.reserve(static_cast<qsizetype>(std::min<qint64>(
-    expectedBytes, std::numeric_limits<int>::max())));
-  DspBlockProcessor processor(decodedAudio_, sampleRate_, *parameters_, 0);
-  while (!processor.atEnd()) {
-    output.append(processor.processNext().audio);
-  }
-
-  if (output.size() > std::numeric_limits<quint32>::max()) {
+  const qint64 totalFrames = decodedAudio_.size() / kBytesPerFrame;
+  const qint64 startFrame = std::clamp<qint64>(
+    startMilliseconds * sampleRate_ / 1000, 0, totalFrames);
+  const qint64 requestedEnd = endMilliseconds > 0
+    ? endMilliseconds * sampleRate_ / 1000
+    : totalFrames;
+  const qint64 endFrame = std::clamp<qint64>(requestedEnd, 0, totalFrames);
+  if (startFrame >= endFrame) {
     if (errorMessage) {
-      *errorMessage = "The processed audio is too large for a standard WAV file.";
+      *errorMessage = "The export end must be after its start.";
     }
     return false;
   }
 
-  QFile file(path);
-  if (!file.open(QIODevice::WriteOnly)) {
+  exportSession_ = std::make_unique<AudioExportSession>(
+    path, decodedAudio_, sampleRate_, *parameters_, startFrame, endFrame);
+  if (!exportSession_->file.open(QIODevice::WriteOnly)) {
     if (errorMessage) {
-      *errorMessage = file.errorString();
+      *errorMessage = exportSession_->file.errorString();
     }
+    exportSession_.reset();
     return false;
   }
 
-  QDataStream stream(&file);
-  writeWavHeader(stream, static_cast<quint32>(output.size()), sampleRate_);
-  if (stream.writeRawData(output.constData(), output.size()) != output.size()) {
-    if (errorMessage) {
-      *errorMessage = file.errorString();
-    }
-    return false;
-  }
+  QDataStream stream(&exportSession_->file);
+  writeWavHeader(stream, 0, sampleRate_);
+  emit exportProgress(0);
+  QTimer::singleShot(0, this, &AudioEngine::processExportBlock);
   return true;
+}
+
+void AudioEngine::cancelExport()
+{
+  if (exportSession_) {
+    exportSession_->canceled = true;
+  }
+}
+
+void AudioEngine::processExportBlock()
+{
+  if (!exportSession_) {
+    return;
+  }
+  if (exportSession_->canceled) {
+    const QString path = exportSession_->path;
+    exportSession_->file.close();
+    exportSession_.reset();
+    QFile::remove(path);
+    emit exportCanceled();
+    return;
+  }
+
+  ProcessedBlock block = exportSession_->processor->processNext();
+  if (block.sourceStart >= exportSession_->endFrame || block.audio.isEmpty()) {
+    finishExport();
+    return;
+  }
+  if (block.sourceEnd > exportSession_->endFrame) {
+    const qint64 sourceSpan = block.sourceEnd - block.sourceStart;
+    const qint64 includedSpan = exportSession_->endFrame - block.sourceStart;
+    block.audio.truncate(static_cast<qsizetype>(
+      block.audio.size() * includedSpan / std::max<qint64>(1, sourceSpan)));
+    block.sourceEnd = exportSession_->endFrame;
+  }
+
+  if (exportSession_->file.write(block.audio) != block.audio.size()) {
+    const QString error = exportSession_->file.errorString();
+    const QString path = exportSession_->path;
+    exportSession_->file.close();
+    exportSession_.reset();
+    QFile::remove(path);
+    emit exportFailed(error);
+    return;
+  }
+  exportSession_->outputBytes += block.audio.size();
+  if (exportSession_->outputBytes > std::numeric_limits<quint32>::max()) {
+    const QString path = exportSession_->path;
+    exportSession_->file.close();
+    exportSession_.reset();
+    QFile::remove(path);
+    emit exportFailed("The processed audio is too large for a standard WAV file.");
+    return;
+  }
+
+  const qint64 completed = block.sourceEnd - exportSession_->startFrame;
+  const qint64 total = exportSession_->endFrame - exportSession_->startFrame;
+  emit exportProgress(static_cast<int>(completed * 100 / std::max<qint64>(1, total)));
+  if (block.sourceEnd >= exportSession_->endFrame) {
+    finishExport();
+  } else {
+    QTimer::singleShot(0, this, &AudioEngine::processExportBlock);
+  }
+}
+
+void AudioEngine::finishExport()
+{
+  if (!exportSession_) {
+    return;
+  }
+  const QString path = exportSession_->path;
+  exportSession_->file.seek(0);
+  QDataStream stream(&exportSession_->file);
+  writeWavHeader(stream, static_cast<quint32>(exportSession_->outputBytes), sampleRate_);
+  exportSession_->file.close();
+  exportSession_.reset();
+  emit exportProgress(100);
+  emit exportFinished(path);
 }
 
 bool AudioEngine::isPlaying() const
@@ -615,6 +770,16 @@ bool AudioEngine::isPlaying() const
 bool AudioEngine::hasAudio() const
 {
   return !decodedAudio_.isEmpty();
+}
+
+bool AudioEngine::isDecodeComplete() const
+{
+  return decodeComplete_;
+}
+
+bool AudioEngine::isExporting() const
+{
+  return exportSession_ != nullptr;
 }
 
 qint64 AudioEngine::position() const

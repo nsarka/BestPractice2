@@ -6,6 +6,8 @@
 
 class QCheckBox;
 class QComboBox;
+class QDragEnterEvent;
+class QDropEvent;
 class QLabel;
 class QPlainTextEdit;
 class QPushButton;
@@ -16,12 +18,17 @@ class QToolButton;
 class QString;
 class QWidget;
 class AudioEngine;
+class ProgressDialog;
 
 class MainWindow : public QMainWindow
 {
 public:
   explicit MainWindow(QWidget* parent = nullptr);
   void openAudioFile(const QString& path);
+
+protected:
+  void dragEnterEvent(QDragEnterEvent* event) override;
+  void dropEvent(QDropEvent* event) override;
 
 private:
   QWidget* createDiscPanel();
@@ -41,6 +48,8 @@ private:
   void updatePlaybackPosition(qint64 position);
   void updatePlaybackDuration(qint64 duration);
   void updatePlaybackState();
+  void validateLoopTimes(bool startChanged);
+  void openHelp();
   void setLoopTime(bool start, qint64 milliseconds);
   qint64 loopTime(bool start) const;
   static QString formatTime(qint64 milliseconds);
@@ -95,6 +104,8 @@ private:
   QSlider* highSlider_ = nullptr;
   QLabel* bassLabel_ = nullptr;
   QLabel* highLabel_ = nullptr;
+  ProgressDialog* exportDialog_ = nullptr;
+  bool loopEndUserSet_ = false;
 };
 
 #endif

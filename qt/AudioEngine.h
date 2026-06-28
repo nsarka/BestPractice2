@@ -12,6 +12,7 @@ class QAudioSink;
 class QTimer;
 class StreamingAudioDevice;
 struct AudioEngineParameters;
+struct AudioExportSession;
 
 class AudioEngine : public QObject
 {
@@ -33,10 +34,14 @@ public:
   void setKaraokeEnabled(bool enabled);
   void setKaraokeSettings(int vocalPosition, int bassCutoff, int trebleRange);
 
-  bool saveProcessedWav(const QString& path, QString* errorMessage = nullptr) const;
+  bool startExport(const QString& path, qint64 startMilliseconds,
+                   qint64 endMilliseconds, QString* errorMessage = nullptr);
+  void cancelExport();
 
   bool isPlaying() const;
   bool hasAudio() const;
+  bool isDecodeComplete() const;
+  bool isExporting() const;
   qint64 position() const;
   qint64 duration() const;
 
@@ -48,11 +53,19 @@ signals:
   void ready(const QString& path);
   void message(const QString& text);
   void errorOccurred(const QString& text);
+  void decodeCompleted();
+  void exportProgress(int percent);
+  void exportFinished(const QString& path);
+  void exportCanceled();
+  void exportFailed(const QString& text);
 
 private:
   void beginDecode(const QString& path);
   void applyParameters();
   void updatePosition();
+  void startProgressivePlayback();
+  void processExportBlock();
+  void finishExport();
 
   QAudioDecoder* decoder_ = nullptr;
   QAudioSink* sink_ = nullptr;
@@ -62,8 +75,13 @@ private:
   QByteArray decodedAudio_;
   QString sourcePath_;
   std::unique_ptr<AudioEngineParameters> parameters_;
+  std::unique_ptr<AudioExportSession> exportSession_;
   int sampleRate_ = 44100;
   qint64 durationMs_ = 0;
+  qint64 streamingSourceFrames_ = 0;
+  bool playbackStarted_ = false;
+  bool decodeComplete_ = false;
+  bool userPaused_ = false;
 };
 
 #endif

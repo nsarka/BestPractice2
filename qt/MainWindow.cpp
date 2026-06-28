@@ -10,6 +10,11 @@
 #include <QAction>
 #include <QCheckBox>
 #include <QComboBox>
+#include <QCoreApplication>
+#include <QDesktopServices>
+#include <QDir>
+#include <QDragEnterEvent>
+#include <QDropEvent>
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QGridLayout>
@@ -17,8 +22,11 @@
 #include <QHeaderView>
 #include <QLabel>
 #include <QMouseEvent>
+#include <QMimeData>
 #include <QPushButton>
 #include <QSlider>
+#include <QShortcut>
+#include <QSignalBlocker>
 #include <QSpinBox>
 #include <QStatusBar>
 #include <QStyle>
@@ -27,6 +35,7 @@
 #include <QTableWidget>
 #include <QTime>
 #include <QToolButton>
+#include <QUrl>
 #include <QVBoxLayout>
 
 #include <algorithm>
@@ -99,6 +108,7 @@ MainWindow::MainWindow(QWidget* parent)
 {
   setWindowTitle(QStringLiteral("BestPractice ") + BP_VERSION);
   resize(940, 620);
+  setAcceptDrops(true);
 
   audioEngine_ = new AudioEngine(this);
 
@@ -391,16 +401,24 @@ void MainWindow::connectUi()
     if (!path.endsWith(".wav", Qt::CaseInsensitive)) {
       path += ".wav";
     }
+    const bool loopOnly = loopCheck_->isChecked() && loopTime(false) > loopTime(true);
+    const qint64 start = loopOnly ? loopTime(true) : 0;
+    const qint64 end = loopOnly ? loopTime(false) : audioEngine_->duration();
     QString error;
-    if (audioEngine_->saveProcessedWav(path, &error)) {
-      addMessage("Saved processed audio: " + path);
-      statusBar()->showMessage("Saved " + path, 5000);
-    } else {
+    if (!audioEngine_->startExport(path, start, end, &error)) {
       addMessage("Save error: " + error);
       statusBar()->showMessage(error, 5000);
+      return;
     }
+
+    exportDialog_ = new ProgressDialog(this);
+    exportDialog_->setAttribute(Qt::WA_DeleteOnClose);
+    connect(exportDialog_, &QDialog::rejected, audioEngine_, &AudioEngine::cancelExport);
+    connect(exportDialog_, &QObject::destroyed, this, [this] { exportDialog_ = nullptr; });
+    exportDialog_->show();
+    saveFileButton_->setEnabled(false);
   });
-  connect(helpButton_, &QPushButton::clicked, this, [this] { showBackendPlaceholder("Open help"); });
+  connect(helpButton_, &QPushButton::clicked, this, &MainWindow::openHelp);
   connect(loopStartButton_, &QPushButton::clicked, this, [this] {
     setLoopTime(true, audioEngine_->position());
     if (loopTime(false) < loopTime(true)) {
@@ -409,6 +427,7 @@ void MainWindow::connectUi()
   });
   connect(loopEndButton_, &QPushButton::clicked, this, [this] {
     setLoopTime(false, audioEngine_->position());
+    loopEndUserSet_ = true;
     if (loopTime(false) < loopTime(true)) {
       setLoopTime(true, loopTime(false));
     }
@@ -418,6 +437,28 @@ void MainWindow::connectUi()
     const QString path = QFileDialog::getOpenFileName(this, "Open audio file", QString(), "Audio files (*.wav *.mp3)");
     if (!path.isEmpty()) {
       openAudioFile(path);
+    }
+  });
+
+  const auto connectLoopBox = [this](QSpinBox* box, bool start) {
+    connect(box, &QSpinBox::valueChanged, this, [this, start] {
+      if (!start) {
+        loopEndUserSet_ = true;
+      }
+      validateLoopTimes(start);
+    });
+  };
+  connectLoopBox(loopStartMin_, true);
+  connectLoopBox(loopStartSec_, true);
+  connectLoopBox(loopStartFrame_, true);
+  connectLoopBox(loopEndMin_, false);
+  connectLoopBox(loopEndSec_, false);
+  connectLoopBox(loopEndFrame_, false);
+  connect(loopCheck_, &QCheckBox::toggled, this, [this](bool enabled) {
+    if (enabled && loopTime(false) <= loopTime(true)) {
+      const QSignalBlocker blocker(loopCheck_);
+      loopCheck_->setChecked(false);
+      addMessage("Loop start must be before loop end.");
     }
   });
 
@@ -484,12 +525,13 @@ void MainWindow::connectUi()
   });
   connect(audioEngine_, &AudioEngine::processingChanged, this, [this](bool processing) {
     openFileButton_->setEnabled(!processing);
-    saveFileButton_->setEnabled(!processing && audioEngine_->hasAudio());
+    saveFileButton_->setEnabled(!processing && audioEngine_->isDecodeComplete()
+                                && !audioEngine_->isExporting());
     pauseButton_->setEnabled(!processing && audioEngine_->hasAudio());
     statusBar()->showMessage(processing ? "Processing audio..." : "Ready");
   });
   connect(audioEngine_, &AudioEngine::ready, this, [this](const QString& path) {
-    saveFileButton_->setEnabled(true);
+    saveFileButton_->setEnabled(audioEngine_->isDecodeComplete());
     pauseButton_->setEnabled(true);
     cueSlider_->setEnabled(true);
     loopPanel_->setEnabled(true);
@@ -498,11 +540,58 @@ void MainWindow::connectUi()
     previousButton_->setEnabled(true);
     statusBar()->showMessage("Playing " + QFileInfo(path).fileName());
   });
+  connect(audioEngine_, &AudioEngine::decodeCompleted, this, [this] {
+    saveFileButton_->setEnabled(!audioEngine_->isExporting());
+  });
+  connect(audioEngine_, &AudioEngine::exportProgress, this, [this](int percent) {
+    if (exportDialog_) {
+      exportDialog_->setProgress(percent);
+    }
+  });
+  connect(audioEngine_, &AudioEngine::exportFinished, this, [this](const QString& path) {
+    if (exportDialog_) {
+      exportDialog_->accept();
+    }
+    saveFileButton_->setEnabled(true);
+    addMessage("Saved processed audio: " + path);
+    statusBar()->showMessage("Saved " + path, 5000);
+  });
+  connect(audioEngine_, &AudioEngine::exportCanceled, this, [this] {
+    if (exportDialog_) {
+      exportDialog_->close();
+    }
+    saveFileButton_->setEnabled(audioEngine_->isDecodeComplete());
+    addMessage("Audio export canceled.");
+  });
+  connect(audioEngine_, &AudioEngine::exportFailed, this, [this](const QString& error) {
+    if (exportDialog_) {
+      exportDialog_->close();
+    }
+    saveFileButton_->setEnabled(audioEngine_->isDecodeComplete());
+    addMessage("Save error: " + error);
+    statusBar()->showMessage(error, 5000);
+  });
   connect(audioEngine_, &AudioEngine::message, this, &MainWindow::addMessage);
   connect(audioEngine_, &AudioEngine::errorOccurred, this, [this](const QString& error) {
     addMessage(error);
     statusBar()->showMessage(error);
   });
+
+  auto* playShortcut = new QShortcut(
+    QKeySequence(QKeyCombination(Qt::KeypadModifier, Qt::Key_0)), this);
+  connect(playShortcut, &QShortcut::activated, audioEngine_, &AudioEngine::togglePlayback);
+  auto* restartShortcut = new QShortcut(QKeySequence(Qt::Key_Backspace), this);
+  connect(restartShortcut, &QShortcut::activated, this, [this] { audioEngine_->seek(0); });
+  auto* fasterShortcut = new QShortcut(QKeySequence(Qt::Key_F5), this);
+  connect(fasterShortcut, &QShortcut::activated, this, [this] {
+    speedSlider_->setValue(speedSlider_->value() + 100);
+  });
+  auto* slowerShortcut = new QShortcut(QKeySequence(Qt::SHIFT | Qt::Key_F5), this);
+  connect(slowerShortcut, &QShortcut::activated, this, [this] {
+    speedSlider_->setValue(speedSlider_->value() - 100);
+  });
+  auto* helpShortcut = new QShortcut(QKeySequence::HelpContents, this);
+  connect(helpShortcut, &QShortcut::activated, this, &MainWindow::openHelp);
 }
 
 void MainWindow::openAudioFile(const QString& path)
@@ -514,8 +603,36 @@ void MainWindow::openAudioFile(const QString& path)
   setLoopTime(true, 0);
   setLoopTime(false, 0);
   loopCheck_->setChecked(false);
+  loopEndUserSet_ = false;
   audioEngine_->loadFile(path);
   addMessage("Selected file: " + path);
+}
+
+void MainWindow::dragEnterEvent(QDragEnterEvent* event)
+{
+  if (!event->mimeData()->hasUrls()) {
+    return;
+  }
+  for (const QUrl& url : event->mimeData()->urls()) {
+    const QString suffix = QFileInfo(url.toLocalFile()).suffix().toLower();
+    if (url.isLocalFile() && (suffix == "wav" || suffix == "mp3")) {
+      event->acceptProposedAction();
+      return;
+    }
+  }
+}
+
+void MainWindow::dropEvent(QDropEvent* event)
+{
+  for (const QUrl& url : event->mimeData()->urls()) {
+    const QString path = url.toLocalFile();
+    const QString suffix = QFileInfo(path).suffix().toLower();
+    if (!path.isEmpty() && (suffix == "wav" || suffix == "mp3")) {
+      openAudioFile(path);
+      event->acceptProposedAction();
+      return;
+    }
+  }
 }
 
 void MainWindow::addMessage(const QString& message)
@@ -572,7 +689,7 @@ void MainWindow::updatePlaybackDuration(qint64 duration)
 {
   cueSlider_->setRange(0, static_cast<int>(duration));
   cueSlider_->setEnabled(duration > 0);
-  if (loopTime(false) == 0) {
+  if (!loopEndUserSet_) {
     setLoopTime(false, duration);
   }
 }
@@ -587,6 +704,9 @@ void MainWindow::updatePlaybackState()
 void MainWindow::setLoopTime(bool start, qint64 milliseconds)
 {
   milliseconds = std::max<qint64>(0, milliseconds);
+  if (audioEngine_->duration() > 0) {
+    milliseconds = std::min(milliseconds, audioEngine_->duration());
+  }
   const qint64 totalSeconds = milliseconds / 1000;
   const int minutes = static_cast<int>(totalSeconds / 60);
   const int seconds = static_cast<int>(totalSeconds % 60);
@@ -595,9 +715,49 @@ void MainWindow::setLoopTime(bool start, qint64 milliseconds)
   QSpinBox* minuteBox = start ? loopStartMin_ : loopEndMin_;
   QSpinBox* secondBox = start ? loopStartSec_ : loopEndSec_;
   QSpinBox* frameBox = start ? loopStartFrame_ : loopEndFrame_;
+  const QSignalBlocker minuteBlocker(minuteBox);
+  const QSignalBlocker secondBlocker(secondBox);
+  const QSignalBlocker frameBlocker(frameBox);
   minuteBox->setValue(minutes);
   secondBox->setValue(seconds);
   frameBox->setValue(frames);
+}
+
+void MainWindow::validateLoopTimes(bool startChanged)
+{
+  if (audioEngine_->duration() <= 0) {
+    return;
+  }
+
+  qint64 start = std::min(loopTime(true), audioEngine_->duration());
+  qint64 end = std::min(loopTime(false), audioEngine_->duration());
+  if (start > end) {
+    if (startChanged) {
+      end = start;
+      loopEndUserSet_ = true;
+    } else {
+      start = end;
+    }
+  }
+  setLoopTime(true, start);
+  setLoopTime(false, end);
+}
+
+void MainWindow::openHelp()
+{
+  const QString applicationDir = QCoreApplication::applicationDirPath();
+  const QStringList candidates = {
+    QDir(applicationDir).filePath("help.html"),
+    QDir(applicationDir).filePath("../qt/help.html"),
+    QDir::current().filePath("qt/help.html")
+  };
+  for (const QString& path : candidates) {
+    if (QFileInfo::exists(path)) {
+      QDesktopServices::openUrl(QUrl::fromLocalFile(QFileInfo(path).absoluteFilePath()));
+      return;
+    }
+  }
+  addMessage("Help file was not found.");
 }
 
 qint64 MainWindow::loopTime(bool start) const
