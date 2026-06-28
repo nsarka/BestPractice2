@@ -38,7 +38,9 @@ if(BESTPRACTICE_BUILD_QT_FORMS)
     find_package(Qt6 QUIET COMPONENTS Widgets Multimedia)
 
     if(Qt6_FOUND)
-        add_executable(bestpractice_qt
+        configure_file(qt/BestPractice.rc.in BestPractice.rc @ONLY)
+
+        add_executable(bestpractice_qt WIN32
             qt/AudioEngine.cpp
             qt/AudioEngine.h
             qt/AboutDialog.cpp
@@ -47,10 +49,12 @@ if(BESTPRACTICE_BUILD_QT_FORMS)
             qt/MainWindow.h
             qt/ProgressDialog.cpp
             qt/ProgressDialog.h
+            qt/resources.qrc
             qt/main.cpp
+            "${CMAKE_CURRENT_BINARY_DIR}/BestPractice.rc"
         )
 
-        set_target_properties(bestpractice_qt PROPERTIES AUTOMOC ON)
+        set_target_properties(bestpractice_qt PROPERTIES AUTOMOC ON AUTORCC ON)
 
         target_link_libraries(bestpractice_qt PRIVATE Qt6::Widgets Qt6::Multimedia bestpractice_core)
         target_include_directories(bestpractice_qt PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")

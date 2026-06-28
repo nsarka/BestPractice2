@@ -2,12 +2,14 @@
 
 #include <QApplication>
 #include <QFileInfo>
+#include <QIcon>
 
 int main(int argc, char* argv[])
 {
   QApplication app(argc, argv);
   QApplication::setApplicationName("BestPractice");
   QApplication::setOrganizationName("BestPractice");
+  QApplication::setWindowIcon(QIcon(":/app.ico"));
 
   MainWindow window;
   window.show();
