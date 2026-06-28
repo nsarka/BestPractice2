@@ -23,7 +23,9 @@ AboutDialog::AboutDialog(QWidget* parent)
 
   auto* body = new QLabel(
     "Released under the GPL version 2<br>"
-    "(c) 2007 Robert Moerland<br><br>"
+    "Original BestPractice software (c) 2007 Robert Moerland<br>"
+    "<a href=\"https://bestpractice.sourceforge.net/\">"
+    "bestpractice.sourceforge.net</a><br><br>"
     "<a href=\"https://github.com/nsarka/BestPractice2\">"
     "github.com/nsarka/BestPractice2</a>");
   body->setOpenExternalLinks(true);

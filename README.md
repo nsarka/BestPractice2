@@ -54,5 +54,6 @@ The generated setup program is `build-qt/BestPractice-1.03-Setup.exe`.
 ## License
 
 BestPractice is distributed under the GNU General Public License version 2. See
-[`license.txt`](license.txt). The original BestPractice application was created
+[`license.txt`](license.txt). This project is based on the
+[original BestPractice software](https://bestpractice.sourceforge.net/) created
 by Robert Moerland.
