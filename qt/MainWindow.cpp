@@ -2,12 +2,10 @@
 
 #include "AboutDialog.h"
 #include "AudioEngine.h"
-#include "LanguageDialog.h"
 #include "ProgressDialog.h"
 #include "version.h"
 
 #include <QAbstractItemView>
-#include <QAction>
 #include <QCheckBox>
 #include <QComboBox>
 #include <QCoreApplication>
@@ -118,60 +116,21 @@ MainWindow::MainWindow(QWidget* parent)
   layout->setHorizontalSpacing(12);
   layout->setVerticalSpacing(10);
 
-  layout->addWidget(createDiscPanel(), 0, 0, 4, 1);
-  layout->addWidget(createTransportPanel(), 4, 0);
-  layout->addWidget(createMessagesPanel(), 5, 0);
-  layout->addWidget(createLoopPanel(), 0, 1);
-  layout->addWidget(createProcessingTabs(), 2, 1, 4, 1);
+  layout->addWidget(createTransportPanel(), 0, 0, 1, 2);
+  layout->addWidget(createLoopPanel(), 1, 0);
+  layout->addWidget(createProcessingTabs(), 1, 1);
+  layout->addWidget(createMessagesPanel(), 2, 0, 1, 2);
 
-  layout->setColumnStretch(0, 5);
-  layout->setColumnStretch(1, 4);
-  layout->setRowStretch(3, 1);
-  layout->setRowStretch(5, 1);
+  layout->setColumnStretch(0, 4);
+  layout->setColumnStretch(1, 5);
+  layout->setRowStretch(1, 1);
+  layout->setRowStretch(2, 1);
 
   setCentralWidget(root);
   statusBar()->showMessage("Ready");
 
   addMessage("Qt DSP playback engine initialized.");
   connectUi();
-}
-
-QWidget* MainWindow::createDiscPanel()
-{
-  auto* panel = new QWidget;
-  auto* layout = new QVBoxLayout(panel);
-  layout->setContentsMargins(0, 0, 0, 0);
-
-  layout->addWidget(sectionLabel("Disc"));
-
-  auto* driveRow = new QHBoxLayout;
-  driveList_ = new QComboBox;
-  driveList_->addItem("No CD drive detected");
-  driveRow->addWidget(new QLabel("Drive"));
-  driveRow->addWidget(driveList_, 1);
-  layout->addLayout(driveRow);
-
-  discTitleLabel_ = new QLabel("Disc title: ");
-  layout->addWidget(discTitleLabel_);
-
-  trackList_ = new QTableWidget(0, 2);
-  setTableHeaders(trackList_, {"Track #", "Track Title"});
-  trackList_->setContextMenuPolicy(Qt::ActionsContextMenu);
-  auto* playTrackAction = trackList_->addAction("Play CD track");
-  auto* refreshAction = trackList_->addAction("Refresh CD");
-  connect(playTrackAction, &QAction::triggered, this, [this] { showBackendPlaceholder("Play CD track"); });
-  connect(refreshAction, &QAction::triggered, this, [this] { showBackendPlaceholder("Refresh CD"); });
-  layout->addWidget(trackList_, 1);
-
-  auto* cdOptions = new QHBoxLayout;
-  refreshCdButton_ = new QPushButton("Refresh CD");
-  checkCddb_ = new QCheckBox("Check CDDB");
-  checkCddb_->setChecked(true);
-  cdOptions->addWidget(refreshCdButton_);
-  cdOptions->addWidget(checkCddb_);
-  layout->addLayout(cdOptions);
-
-  return panel;
 }
 
 QWidget* MainWindow::createTransportPanel()
@@ -181,18 +140,12 @@ QWidget* MainWindow::createTransportPanel()
   layout->setContentsMargins(0, 0, 0, 0);
 
   auto* transportRow = new QHBoxLayout;
-  selectTrackButton_ = makeToolButton("Play selected CD track", QStyle::SP_DriveCDIcon);
   pauseButton_ = makeToolButton("Play or pause", QStyle::SP_MediaPause);
-  previousButton_ = makeToolButton("Previous track", QStyle::SP_MediaSkipBackward);
-  nextButton_ = makeToolButton("Next track", QStyle::SP_MediaSkipForward);
+  restartButton_ = makeToolButton("Restart", QStyle::SP_MediaSkipBackward);
   pauseButton_->setEnabled(false);
-  previousButton_->setEnabled(false);
-  nextButton_->setEnabled(false);
-  selectTrackButton_->setEnabled(false);
-  transportRow->addWidget(selectTrackButton_);
+  restartButton_->setEnabled(false);
   transportRow->addWidget(pauseButton_);
-  transportRow->addWidget(previousButton_);
-  transportRow->addWidget(nextButton_);
+  transportRow->addWidget(restartButton_);
   transportRow->addStretch();
 
   openFileButton_ = new QPushButton("Open File...");
@@ -220,10 +173,8 @@ QWidget* MainWindow::createTransportPanel()
   footer->addWidget(new QLabel("Volume"));
   volumeSlider_ = horizontalSlider(0, 255, 192);
   footer->addWidget(volumeSlider_, 1);
-  languageButton_ = new QPushButton("Language");
   aboutButton_ = new QPushButton("About");
   helpButton_ = new QPushButton("Help");
-  footer->addWidget(languageButton_);
   footer->addWidget(aboutButton_);
   footer->addWidget(helpButton_);
   layout->addLayout(footer);
@@ -278,6 +229,7 @@ QWidget* MainWindow::createLoopPanel()
   loopEndFrame_ = endBoxes[2];
   loopCheck_ = new QCheckBox("Loop");
   layout->addWidget(loopCheck_, 3, 0, 1, 2);
+  layout->setRowStretch(4, 1);
 
   return group;
 }
@@ -385,13 +337,10 @@ QToolButton* MainWindow::makeToolButton(const QString& tooltip, QStyle::Standard
 
 void MainWindow::connectUi()
 {
-  connect(refreshCdButton_, &QPushButton::clicked, this, [this] { showBackendPlaceholder("Refresh CD"); });
-  connect(selectTrackButton_, &QToolButton::clicked, this, [this] { showBackendPlaceholder("Select CD track"); });
   connect(pauseButton_, &QToolButton::clicked, this, [this] {
     audioEngine_->togglePlayback();
   });
-  connect(previousButton_, &QToolButton::clicked, this, [this] { audioEngine_->seek(0); });
-  connect(nextButton_, &QToolButton::clicked, this, [this] { showBackendPlaceholder("Next track"); });
+  connect(restartButton_, &QToolButton::clicked, this, [this] { audioEngine_->seek(0); });
   connect(saveFileButton_, &QPushButton::clicked, this, [this] {
     QString path = QFileDialog::getSaveFileName(this, "Save processed audio", QString(),
                                                 "Wave audio (*.wav)");
@@ -467,13 +416,6 @@ void MainWindow::connectUi()
     dialog.exec();
   });
 
-  connect(languageButton_, &QPushButton::clicked, this, [this] {
-    LanguageDialog dialog(this);
-    if (dialog.exec() == QDialog::Accepted) {
-      addMessage("Selected language: " + dialog.selectedLanguageCode());
-    }
-  });
-
   connect(speedSlider_, &QSlider::valueChanged, this, [this](int value) {
     updateSpeedLabel(value);
     audioEngine_->setSpeed(value);
@@ -537,7 +479,7 @@ void MainWindow::connectUi()
     loopPanel_->setEnabled(true);
     loopStartButton_->setEnabled(true);
     loopEndButton_->setEnabled(true);
-    previousButton_->setEnabled(true);
+    restartButton_->setEnabled(true);
     statusBar()->showMessage("Playing " + QFileInfo(path).fileName());
   });
   connect(audioEngine_, &AudioEngine::decodeCompleted, this, [this] {
@@ -598,6 +540,7 @@ void MainWindow::openAudioFile(const QString& path)
 {
   saveFileButton_->setEnabled(false);
   pauseButton_->setEnabled(false);
+  restartButton_->setEnabled(false);
   cueSlider_->setEnabled(false);
   loopPanel_->setEnabled(false);
   setLoopTime(true, 0);
@@ -779,9 +722,4 @@ QString MainWindow::formatTime(qint64 milliseconds)
     .arg(hours)
     .arg(minutes, 2, 10, QLatin1Char('0'))
     .arg(seconds, 2, 10, QLatin1Char('0'));
-}
-
-void MainWindow::showBackendPlaceholder(const QString& action)
-{
-  addMessage(action + " is ready for backend wiring.");
 }

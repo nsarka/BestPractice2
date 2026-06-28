@@ -43,8 +43,6 @@ if(BESTPRACTICE_BUILD_QT_FORMS)
             qt/AudioEngine.h
             qt/AboutDialog.cpp
             qt/AboutDialog.h
-            qt/LanguageDialog.cpp
-            qt/LanguageDialog.h
             qt/MainWindow.cpp
             qt/MainWindow.h
             qt/ProgressDialog.cpp

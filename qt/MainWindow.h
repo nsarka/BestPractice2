@@ -31,7 +31,6 @@ protected:
   void dropEvent(QDropEvent* event) override;
 
 private:
-  QWidget* createDiscPanel();
   QWidget* createTransportPanel();
   QWidget* createLoopPanel();
   QWidget* createProcessingTabs();
@@ -53,25 +52,15 @@ private:
   void setLoopTime(bool start, qint64 milliseconds);
   qint64 loopTime(bool start) const;
   static QString formatTime(qint64 milliseconds);
-  void showBackendPlaceholder(const QString& action);
-
-  QComboBox* driveList_ = nullptr;
-  QLabel* discTitleLabel_ = nullptr;
-  QTableWidget* trackList_ = nullptr;
   QTableWidget* messages_ = nullptr;
 
-  QPushButton* refreshCdButton_ = nullptr;
   QPushButton* openFileButton_ = nullptr;
   QPushButton* saveFileButton_ = nullptr;
   QPushButton* aboutButton_ = nullptr;
   QPushButton* helpButton_ = nullptr;
-  QPushButton* languageButton_ = nullptr;
-  QCheckBox* checkCddb_ = nullptr;
 
-  QToolButton* selectTrackButton_ = nullptr;
   QToolButton* pauseButton_ = nullptr;
-  QToolButton* previousButton_ = nullptr;
-  QToolButton* nextButton_ = nullptr;
+  QToolButton* restartButton_ = nullptr;
 
   AudioEngine* audioEngine_ = nullptr;
   QLabel* timeLabel_ = nullptr;

@@ -36,7 +36,6 @@ The `qt/` directory contains a Qt 6 Widgets replacement for the VCL forms:
 
 - `MainWindow` replaces `Main.dfm`.
 - `AboutDialog` replaces `AboutBoxX.dfm`.
-- `LanguageDialog` replaces `LangForm.dfm`.
 - `ProgressDialog` replaces `ProgressForm.dfm`.
 
 The Qt target is named `bestpractice_qt`. It is optional: CMake will skip it when
@@ -72,8 +71,8 @@ processing is reserved for WAV export. Decoding can continue while the initial
 buffer is already playing, and the streaming source grows if decoding is slower
 than playback.
 
-Audio-CD discovery/extraction and runtime UI localization remain on the
-legacy-backend migration list.
+The modern interface is focused on file playback and processing. The original
+CD and localization sources remain only as legacy reference code.
 
 ## Configure And Build
 
