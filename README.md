@@ -49,7 +49,7 @@ Install NSIS, then build the English-only per-user installer:
 cmake --build build-qt --target bestpractice_installer
 ```
 
-The generated setup program is `build-qt/BestPractice-1.03-Setup.exe`.
+The generated setup program is `build-qt/BestPractice-2.00-Setup.exe`.
 
 ## License
 

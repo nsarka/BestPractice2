@@ -3,7 +3,9 @@ Unicode true
 !include "MUI2.nsh"
 
 !define PRODUCT_NAME "BestPractice"
-!define PRODUCT_VERSION "1.03"
+!ifndef PRODUCT_VERSION
+  !define PRODUCT_VERSION "2.00"
+!endif
 !define PRODUCT_PUBLISHER "BestPractice"
 !define PRODUCT_REG_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\BestPractice"
 

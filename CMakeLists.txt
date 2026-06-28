@@ -93,7 +93,8 @@ if(BESTPRACTICE_BUILD_QT_FORMS)
                 add_custom_target(bestpractice_installer
                     COMMAND "${MAKENSIS_EXECUTABLE}"
                         "/DSTAGE_DIR=${BESTPRACTICE_PACKAGE_DIR}"
-                        "/DOUTPUT_FILE=${CMAKE_CURRENT_BINARY_DIR}/BestPractice-1.03-Setup.exe"
+                        "/DPRODUCT_VERSION=2.00"
+                        "/DOUTPUT_FILE=${CMAKE_CURRENT_BINARY_DIR}/BestPractice-2.00-Setup.exe"
                         "${CMAKE_CURRENT_SOURCE_DIR}/bp.nsi"
                     DEPENDS bestpractice_package_stage
                     WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
