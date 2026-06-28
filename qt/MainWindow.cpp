@@ -25,6 +25,7 @@
 #include <QSlider>
 #include <QShortcut>
 #include <QSignalBlocker>
+#include <QSizePolicy>
 #include <QSpinBox>
 #include <QStatusBar>
 #include <QStyle>
@@ -117,13 +118,12 @@ MainWindow::MainWindow(QWidget* parent)
   layout->setVerticalSpacing(10);
 
   layout->addWidget(createTransportPanel(), 0, 0, 1, 2);
-  layout->addWidget(createLoopPanel(), 1, 0);
-  layout->addWidget(createProcessingTabs(), 1, 1);
-  layout->addWidget(createMessagesPanel(), 2, 0, 1, 2);
+  layout->addWidget(createLoopPanel(), 1, 0, Qt::AlignTop);
+  layout->addWidget(createMessagesPanel(), 2, 0);
+  layout->addWidget(createProcessingTabs(), 1, 1, 2, 1);
 
   layout->setColumnStretch(0, 4);
   layout->setColumnStretch(1, 5);
-  layout->setRowStretch(1, 1);
   layout->setRowStretch(2, 1);
 
   setCentralWidget(root);
@@ -187,6 +187,7 @@ QWidget* MainWindow::createLoopPanel()
   auto* group = new QGroupBox("Loop Controls");
   loopPanel_ = group;
   group->setEnabled(false);
+  group->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
 
   auto* layout = new QGridLayout(group);
   layout->addWidget(new QLabel("min"), 0, 1);
@@ -229,7 +230,6 @@ QWidget* MainWindow::createLoopPanel()
   loopEndFrame_ = endBoxes[2];
   loopCheck_ = new QCheckBox("Loop");
   layout->addWidget(loopCheck_, 3, 0, 1, 2);
-  layout->setRowStretch(4, 1);
 
   return group;
 }
