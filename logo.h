@@ -1,1 +1,0 @@
-#define ID_LOGO	4356

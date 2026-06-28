@@ -24,9 +24,8 @@ AboutDialog::AboutDialog(QWidget* parent)
   auto* body = new QLabel(
     "Released under the GPL version 2<br>"
     "(c) 2007 Robert Moerland<br><br>"
-    "<a href=\"http://bestpractice.sourceforge.net\">bestpractice.sourceforge.net</a><br>"
-    "akrip32 library (c) Jay A. Key<br>"
-    "<a href=\"http://akrip.sourceforge.net\">akrip.sourceforge.net</a>");
+    "<a href=\"https://github.com/nsarka/BestPractice2\">"
+    "github.com/nsarka/BestPractice2</a>");
   body->setOpenExternalLinks(true);
   body->setTextFormat(Qt::RichText);
   layout->addWidget(body);

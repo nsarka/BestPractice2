@@ -1,14 +1,12 @@
 //---------------------------------------------------------------------------
 
 
-#pragma hdrstop
 
 #include "TKaraokeProcessor.h"
 
 
 //---------------------------------------------------------------------------
 
-#pragma package(smart_init)
 
 //DONE: fix samplefreq
 TKaraokeProcessor::TKaraokeProcessor()

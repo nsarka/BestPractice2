@@ -1,13 +1,10 @@
 //---------------------------------------------------------------------------
 
 
-#pragma hdrstop
 
 #include "SecondOrderSection.h"
-#include <windows.h>
 //---------------------------------------------------------------------------
 
-#pragma package(smart_init)
 
 #define N_1 0
 #define N_2 1

@@ -7,15 +7,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_library(bestpractice_core STATIC
-    buffer.cpp
     CWSOLA.cpp
     IIRButter.cpp
-    SampleData.cpp
     SecondOrderSection.cpp
     TKaraokeProcessor.cpp
-    TQMFBank.cpp
     TResampler.cpp
-    TReader.cpp
 )
 
 target_include_directories(bestpractice_core PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
@@ -83,8 +79,8 @@ if(BESTPRACTICE_BUILD_QT_FORMS)
                     "${CMAKE_CURRENT_SOURCE_DIR}/license.txt"
                     "${BESTPRACTICE_PACKAGE_DIR}/license.txt"
                 COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                    "${CMAKE_CURRENT_SOURCE_DIR}/readme.txt"
-                    "${BESTPRACTICE_PACKAGE_DIR}/readme.txt"
+                    "${CMAKE_CURRENT_SOURCE_DIR}/README.md"
+                    "${BESTPRACTICE_PACKAGE_DIR}/README.md"
                 COMMAND "${WINDEPLOYQT_EXECUTABLE}" --no-translations --compiler-runtime
                     "${BESTPRACTICE_PACKAGE_DIR}/BestPractice.exe"
                 DEPENDS bestpractice_qt

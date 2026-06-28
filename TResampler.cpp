@@ -1,13 +1,11 @@
 //---------------------------------------------------------------------------
 
 
-#pragma hdrstop
 
 #include "TResampler.h"
 #include <math.h>
 //---------------------------------------------------------------------------
 
-#pragma package(smart_init)
 
 TResampler::TResampler()
 {
