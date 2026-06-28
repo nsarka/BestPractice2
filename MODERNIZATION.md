@@ -11,8 +11,8 @@ Windows toolchains.
 - Visual Studio Community/Build Tools or MinGW-w64/LLVM for the C++ compiler.
 - Qt 6, wxWidgets, or another free native UI toolkit for the eventual VCL form
   replacement.
-- NSIS can remain the installer technology because the project already has an
-  installer script and NSIS is free software.
+- NSIS builds the English-only per-user installer from a clean Qt deployment
+  staging directory.
 
 ## What Builds First
 
@@ -73,6 +73,23 @@ than playback.
 
 The modern interface is focused on file playback and processing. The original
 CD and localization sources remain only as legacy reference code.
+
+### Installer
+
+Build a clean, self-contained Qt deployment without test artifacts:
+
+```powershell
+cmake --build build-qt --target bestpractice_package_stage
+```
+
+With NSIS installed, build `BestPractice-1.03-Setup.exe`:
+
+```powershell
+cmake --build build-qt --target bestpractice_installer
+```
+
+The installer is English-only, installs per user without elevation, creates
+Start Menu shortcuts, and registers a standard Windows uninstaller entry.
 
 ## Configure And Build
 
