@@ -30,12 +30,13 @@ You might use BestPractice to:
 
 - WAV and MP3 playback with progressive decoding.
 - Independent speed, semitone, and fine-pitch controls.
-- WOLA and WSOLA time-stretch modes.
+- WOLA (Weighted Overlap-Add) and WSOLA (Waveform Similarity Overlap-Add) time-stretch modes.
 - Optional anti-alias filtering.
 - Karaoke vocal suppression with bass and treble pass-through.
-- Validated A/B looping.
-- Cancellable full-track or loop-region WAV export.
-- File drag-and-drop and keyboard playback controls.
+- Loop selectable regions of the song.
+- Full-track or loop-region WAV export.
+- File drag-and-drop to load songs.
+- Keyboard playback controls.
 
 ## Build
 
