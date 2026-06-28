@@ -26,8 +26,8 @@ SetOverwrite on
 CRCCheck on
 
 !define MUI_ABORTWARNING
-!define MUI_ICON "ARROW.ico"
-!define MUI_UNICON "ARROW.ico"
+!define MUI_ICON "BestPractice.ico"
+!define MUI_UNICON "BestPractice.ico"
 !define MUI_FINISHPAGE_RUN "$INSTDIR\BestPractice.exe"
 !define MUI_FINISHPAGE_RUN_TEXT "Start BestPractice"
 !define MUI_FINISHPAGE_LINK "BestPractice project on GitHub"
@@ -45,8 +45,8 @@ CRCCheck on
 ; English is intentionally the only installer language.
 !insertmacro MUI_LANGUAGE "English"
 
-Icon "ARROW.ico"
-UninstallIcon "ARROW.ico"
+Icon "BestPractice.ico"
+UninstallIcon "BestPractice.ico"
 
 Section "Install" SecMain
   SectionIn RO
