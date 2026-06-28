@@ -37,6 +37,7 @@ CRCCheck on
 
 !insertmacro MUI_PAGE_WELCOME
 !insertmacro MUI_PAGE_LICENSE "license.txt"
+!insertmacro MUI_PAGE_COMPONENTS
 !insertmacro MUI_PAGE_DIRECTORY
 !insertmacro MUI_PAGE_INSTFILES
 !insertmacro MUI_PAGE_FINISH
@@ -50,7 +51,7 @@ CRCCheck on
 Icon "BestPractice.ico"
 UninstallIcon "BestPractice.ico"
 
-Section "Install" SecMain
+Section "BestPractice application (required)" SecMain
   SectionIn RO
   SetOutPath "$INSTDIR"
   File /r "${STAGE_DIR}\*.*"
@@ -66,15 +67,28 @@ Section "Install" SecMain
   WriteRegStr HKCU "${PRODUCT_REG_KEY}" "QuietUninstallString" '"$INSTDIR\Uninstall.exe" /S'
   WriteRegDWORD HKCU "${PRODUCT_REG_KEY}" "NoModify" 1
   WriteRegDWORD HKCU "${PRODUCT_REG_KEY}" "NoRepair" 1
+SectionEnd
 
+Section "Start Menu shortcuts" SecStartMenu
   CreateDirectory "$SMPROGRAMS\${PRODUCT_NAME}"
   CreateShortcut "$SMPROGRAMS\${PRODUCT_NAME}\${PRODUCT_NAME}.lnk" "$INSTDIR\BestPractice.exe"
   CreateShortcut "$SMPROGRAMS\${PRODUCT_NAME}\Help.lnk" "$INSTDIR\help.html"
   CreateShortcut "$SMPROGRAMS\${PRODUCT_NAME}\Uninstall.lnk" "$INSTDIR\Uninstall.exe"
 SectionEnd
 
+Section "Desktop shortcut" SecDesktop
+  CreateShortcut "$DESKTOP\${PRODUCT_NAME}.lnk" "$INSTDIR\BestPractice.exe"
+SectionEnd
+
+!insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN
+  !insertmacro MUI_DESCRIPTION_TEXT ${SecMain} "Installs BestPractice and its required libraries."
+  !insertmacro MUI_DESCRIPTION_TEXT ${SecStartMenu} "Creates BestPractice, Help, and Uninstall shortcuts in the Start Menu."
+  !insertmacro MUI_DESCRIPTION_TEXT ${SecDesktop} "Creates a BestPractice shortcut on the desktop."
+!insertmacro MUI_FUNCTION_DESCRIPTION_END
+
 Section "Uninstall"
   DeleteRegKey HKCU "${PRODUCT_REG_KEY}"
+  Delete "$DESKTOP\${PRODUCT_NAME}.lnk"
   RMDir /r "$SMPROGRAMS\${PRODUCT_NAME}"
   RMDir /r "$INSTDIR"
 SectionEnd
