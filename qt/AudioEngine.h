@@ -35,7 +35,8 @@ public:
   void setKaraokeSettings(int vocalPosition, int bassCutoff, int trebleRange);
 
   bool startExport(const QString& path, qint64 startMilliseconds,
-                   qint64 endMilliseconds, QString* errorMessage = nullptr);
+                   qint64 endMilliseconds, QString* errorMessage = nullptr,
+                   int mp3BitRate = 192000);
   void cancelExport();
 
   bool isPlaying() const;
@@ -66,6 +67,8 @@ private:
   void startProgressivePlayback();
   void processExportBlock();
   void finishExport();
+  void completeMp3Export();
+  void failExport(const QString& error);
 
   QAudioDecoder* decoder_ = nullptr;
   QAudioSink* sink_ = nullptr;

@@ -34,7 +34,7 @@ You might use BestPractice to:
 - Optional anti-alias filtering.
 - Karaoke vocal suppression with bass and treble pass-through.
 - Loop selectable regions of the song.
-- Full-track or loop-region WAV export.
+- Full-track or loop-region WAV and MP3 export.
 - File drag-and-drop to load songs.
 - Keyboard playback controls.
 

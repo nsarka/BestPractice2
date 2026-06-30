@@ -18,6 +18,7 @@
 #include <QGridLayout>
 #include <QGroupBox>
 #include <QHeaderView>
+#include <QInputDialog>
 #include <QLabel>
 #include <QLineEdit>
 #include <QMouseEvent>
@@ -41,12 +42,15 @@
 
 #include <algorithm>
 #include <array>
+#include <functional>
 
 namespace
 {
 class TimeSpinBox final : public QSpinBox
 {
 public:
+  using StepHandler = std::function<void(int)>;
+
   explicit TimeSpinBox(QWidget* parent = nullptr)
     : QSpinBox(parent)
   {
@@ -74,7 +78,21 @@ public:
     lineEdit()->setTextMargins(0, 0, stepButtonWidth_ * 2, 0);
   }
 
+  void setStepHandler(StepHandler handler)
+  {
+    stepHandler_ = std::move(handler);
+  }
+
 protected:
+  void stepBy(int steps) override
+  {
+    if (stepHandler_) {
+      stepHandler_(steps);
+    } else {
+      QSpinBox::stepBy(steps);
+    }
+  }
+
   void resizeEvent(QResizeEvent* event) override
   {
     QSpinBox::resizeEvent(event);
@@ -89,6 +107,7 @@ protected:
 
 private:
   static constexpr int stepButtonWidth_ = 24;
+  StepHandler stepHandler_;
   QToolButton* incrementButton_ = nullptr;
   QToolButton* decrementButton_ = nullptr;
 };
@@ -254,14 +273,13 @@ QWidget* MainWindow::createLoopPanel()
   layout->addWidget(new QLabel("1/100 s"), 0, 3);
 
   auto addTimeRow = [layout](int row, const QString& label, QPushButton*& nowButton) {
-    QSpinBox* minute = nullptr;
-    QSpinBox* second = nullptr;
-    QSpinBox* frame = nullptr;
+    TimeSpinBox* minute = nullptr;
+    TimeSpinBox* second = nullptr;
+    TimeSpinBox* frame = nullptr;
     layout->addWidget(new QLabel(label), row, 0);
     for (int column = 1; column <= 3; ++column) {
       auto* box = new TimeSpinBox;
       box->setMaximum(column == 1 ? 32767 : (column == 2 ? 59 : 99));
-      box->setWrapping(column != 1);
       box->setKeyboardTracking(false);
       layout->addWidget(box, row, column);
       if (column == 1) {
@@ -275,7 +293,7 @@ QWidget* MainWindow::createLoopPanel()
     nowButton = new QPushButton("Now");
     nowButton->setEnabled(false);
     layout->addWidget(nowButton, row, 4);
-    return std::array<QSpinBox*, 3>{minute, second, frame};
+    return std::array<TimeSpinBox*, 3>{minute, second, frame};
   };
 
   const auto startBoxes = addTimeRow(1, "Start", loopStartButton_);
@@ -286,6 +304,22 @@ QWidget* MainWindow::createLoopPanel()
   loopEndMin_ = endBoxes[0];
   loopEndSec_ = endBoxes[1];
   loopEndFrame_ = endBoxes[2];
+
+  const auto configureStepping = [this](const std::array<TimeSpinBox*, 3>& boxes,
+                                         bool start) {
+    boxes[0]->setStepHandler([this, start](int steps) {
+      adjustLoopTime(start, static_cast<qint64>(steps) * 60000);
+    });
+    boxes[1]->setStepHandler([this, start](int steps) {
+      adjustLoopTime(start, static_cast<qint64>(steps) * 1000);
+    });
+    boxes[2]->setStepHandler([this, start](int steps) {
+      adjustLoopTime(start, static_cast<qint64>(steps) * 10);
+    });
+  };
+  configureStepping(startBoxes, true);
+  configureStepping(endBoxes, false);
+
   loopCheck_ = new QCheckBox("Loop");
   layout->addWidget(loopCheck_, 3, 0, 1, 2);
 
@@ -400,19 +434,40 @@ void MainWindow::connectUi()
   });
   connect(restartButton_, &QToolButton::clicked, this, [this] { audioEngine_->seek(0); });
   connect(saveFileButton_, &QPushButton::clicked, this, [this] {
-    QString path = QFileDialog::getSaveFileName(this, "Save processed audio", QString(),
-                                                "Wave audio (*.wav)");
+    QString selectedFilter;
+    QString path = QFileDialog::getSaveFileName(
+      this, "Save processed audio", QString(),
+      "Wave audio (*.wav);;MP3 audio (*.mp3)", &selectedFilter);
     if (path.isEmpty()) {
       return;
     }
-    if (!path.endsWith(".wav", Qt::CaseInsensitive)) {
-      path += ".wav";
+
+    QString suffix = QFileInfo(path).suffix().toLower();
+    if (suffix != "wav" && suffix != "mp3") {
+      const QString extension = selectedFilter.startsWith("MP3") ? ".mp3" : ".wav";
+      path += extension;
+      suffix = extension.mid(1);
     }
+
+    int mp3BitRate = 192000;
+    if (suffix == "mp3") {
+      const QStringList bitRates = {
+        "128 kbps", "192 kbps", "256 kbps", "320 kbps"
+      };
+      bool accepted = false;
+      const QString choice = QInputDialog::getItem(
+        this, "MP3 quality", "Bit rate:", bitRates, 1, false, &accepted);
+      if (!accepted) {
+        return;
+      }
+      mp3BitRate = choice.left(3).toInt() * 1000;
+    }
+
     const bool loopOnly = loopCheck_->isChecked() && loopTime(false) > loopTime(true);
     const qint64 start = loopOnly ? loopTime(true) : 0;
     const qint64 end = loopOnly ? loopTime(false) : audioEngine_->duration();
     QString error;
-    if (!audioEngine_->startExport(path, start, end, &error)) {
+    if (!audioEngine_->startExport(path, start, end, &error, mp3BitRate)) {
       addMessage("Save error: " + error);
       statusBar()->showMessage(error, 5000);
       return;
@@ -742,6 +797,19 @@ void MainWindow::validateLoopTimes(bool startChanged)
   }
   setLoopTime(true, start);
   setLoopTime(false, end);
+}
+
+void MainWindow::adjustLoopTime(bool start, qint64 deltaMilliseconds)
+{
+  const qint64 current = loopTime(start);
+  const qint64 maximum = audioEngine_->duration() > 0
+    ? audioEngine_->duration()
+    : (qint64(32767) * 60 + 59) * 1000 + 990;
+  setLoopTime(start, std::clamp(current + deltaMilliseconds, qint64(0), maximum));
+  if (!start) {
+    loopEndUserSet_ = true;
+  }
+  validateLoopTimes(start);
 }
 
 void MainWindow::openHelp()

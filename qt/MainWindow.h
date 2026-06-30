@@ -49,6 +49,7 @@ private:
   void updatePlaybackDuration(qint64 duration);
   void updatePlaybackState();
   void validateLoopTimes(bool startChanged);
+  void adjustLoopTime(bool start, qint64 deltaMilliseconds);
   void openHelp();
   void setLoopTime(bool start, qint64 milliseconds);
   qint64 loopTime(bool start) const;

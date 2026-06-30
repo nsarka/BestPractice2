@@ -8,15 +8,21 @@
 #include "TResampler.h"
 
 #include <QAudioBuffer>
+#include <QAudioBufferInput>
 #include <QAudioDecoder>
 #include <QAudioFormat>
 #include <QAudioSink>
 #include <QDataStream>
 #include <QFile>
+#include <QFileInfo>
 #include <QIODevice>
+#include <QMediaCaptureSession>
 #include <QMediaDevices>
+#include <QMediaFormat>
+#include <QMediaRecorder>
 #include <QMutex>
 #include <QMutexLocker>
+#include <QSaveFile>
 #include <QTimer>
 #include <QUrl>
 
@@ -99,6 +105,152 @@ void writeWavHeader(QDataStream& stream, quint32 dataSize, int sampleRate)
   stream << quint16(kBytesPerFrame) << quint16(16);
   stream.writeRawData("data", 4);
   stream << dataSize;
+}
+
+quint32 readBigEndian32(const QByteArray& data, qsizetype offset)
+{
+  return (quint32(static_cast<uchar>(data[offset])) << 24)
+    | (quint32(static_cast<uchar>(data[offset + 1])) << 16)
+    | (quint32(static_cast<uchar>(data[offset + 2])) << 8)
+    | quint32(static_cast<uchar>(data[offset + 3]));
+}
+
+void writeBigEndian32(QByteArray& data, qsizetype offset, quint32 value)
+{
+  data[offset] = static_cast<char>(value >> 24);
+  data[offset + 1] = static_cast<char>(value >> 16);
+  data[offset + 2] = static_cast<char>(value >> 8);
+  data[offset + 3] = static_cast<char>(value);
+}
+
+bool parseMp3FrameHeader(const QByteArray& data, qsizetype offset,
+                         int* frameLength, int* sideInfoLength, int* crcLength)
+{
+  if (offset < 0 || offset + 4 > data.size()) {
+    return false;
+  }
+  const quint32 header = readBigEndian32(data, offset);
+  if ((header & 0xffe00000U) != 0xffe00000U) {
+    return false;
+  }
+
+  const int version = (header >> 19) & 0x3;
+  const int layer = (header >> 17) & 0x3;
+  const int bitRateIndex = (header >> 12) & 0xf;
+  const int sampleRateIndex = (header >> 10) & 0x3;
+  if (version == 1 || layer != 1 || bitRateIndex == 0 || bitRateIndex == 15
+      || sampleRateIndex == 3) {
+    return false;
+  }
+
+  static constexpr int mpeg1BitRates[] = {
+    0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320
+  };
+  static constexpr int mpeg2BitRates[] = {
+    0, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160
+  };
+  static constexpr int sampleRates[] = {44100, 48000, 32000};
+  const int bitRate = (version == 3 ? mpeg1BitRates : mpeg2BitRates)[bitRateIndex]
+    * 1000;
+  int sampleRate = sampleRates[sampleRateIndex];
+  sampleRate /= version == 3 ? 1 : (version == 2 ? 2 : 4);
+  const int padding = (header >> 9) & 0x1;
+  *frameLength = (version == 3 ? 144 : 72) * bitRate / sampleRate + padding;
+
+  const bool mono = ((header >> 6) & 0x3) == 3;
+  *sideInfoLength = version == 3 ? (mono ? 17 : 32) : (mono ? 9 : 17);
+  *crcLength = ((header >> 16) & 0x1) == 0 ? 2 : 0;
+  return *frameLength > 4 && offset + *frameLength <= data.size();
+}
+
+// The Windows MP3 MFT can report submitted PCM buffers as the Info frame count.
+// Recount MPEG frames so duration and seeking remain correct in other players.
+bool normalizeMp3SeekHeader(const QString& path, QString* error)
+{
+  QFile input(path);
+  if (!input.open(QIODevice::ReadOnly)) {
+    *error = input.errorString();
+    return false;
+  }
+  QByteArray data = input.readAll();
+  input.close();
+
+  qsizetype searchStart = 0;
+  if (data.size() >= 10 && data.startsWith("ID3")) {
+    const qsizetype tagSize =
+      (qsizetype(static_cast<uchar>(data[6]) & 0x7f) << 21)
+      | (qsizetype(static_cast<uchar>(data[7]) & 0x7f) << 14)
+      | (qsizetype(static_cast<uchar>(data[8]) & 0x7f) << 7)
+      | qsizetype(static_cast<uchar>(data[9]) & 0x7f);
+    searchStart = 10 + tagSize;
+  }
+
+  qsizetype firstFrame = -1;
+  int firstLength = 0;
+  int firstSideInfo = 0;
+  int firstCrc = 0;
+  const qsizetype searchEnd = std::min(data.size(), searchStart + 4096);
+  for (qsizetype offset = searchStart; offset + 4 <= searchEnd; ++offset) {
+    if (parseMp3FrameHeader(data, offset, &firstLength, &firstSideInfo, &firstCrc)) {
+      firstFrame = offset;
+      break;
+    }
+  }
+  if (firstFrame < 0) {
+    *error = "The MP3 encoder produced an invalid MPEG audio stream.";
+    return false;
+  }
+
+  quint32 frameCount = 0;
+  qsizetype frameOffset = firstFrame;
+  while (frameOffset + 4 <= data.size()) {
+    int frameLength = 0;
+    int sideInfo = 0;
+    int crc = 0;
+    if (!parseMp3FrameHeader(data, frameOffset, &frameLength, &sideInfo, &crc)) {
+      break;
+    }
+    ++frameCount;
+    frameOffset += frameLength;
+  }
+
+  const qsizetype infoOffset = firstFrame + 4 + firstCrc + firstSideInfo;
+  if (infoOffset + 8 > data.size()
+      || (data.mid(infoOffset, 4) != "Info" && data.mid(infoOffset, 4) != "Xing")) {
+    return true;
+  }
+  const quint32 flags = readBigEndian32(data, infoOffset + 4);
+  qsizetype fieldOffset = infoOffset + 8;
+  if (flags & 0x1) {
+    if (fieldOffset + 4 > data.size()) {
+      *error = "The MP3 encoder produced an invalid seek header.";
+      return false;
+    }
+    writeBigEndian32(data, fieldOffset, frameCount);
+    fieldOffset += 4;
+  }
+  if (flags & 0x2) {
+    if (fieldOffset + 4 > data.size()) {
+      *error = "The MP3 encoder produced an invalid seek header.";
+      return false;
+    }
+    writeBigEndian32(data, fieldOffset,
+                     static_cast<quint32>(data.size() - firstFrame));
+    fieldOffset += 4;
+  }
+  if ((flags & 0x4) && fieldOffset + 100 <= data.size()) {
+    for (int index = 0; index < 100; ++index) {
+      data[fieldOffset + index] = static_cast<char>(std::min(255, index * 256 / 100));
+    }
+  }
+
+  QSaveFile output(path);
+  if (!output.open(QIODevice::WriteOnly) || output.write(data) != data.size()
+      || !output.commit()) {
+    *error = output.errorString();
+    return false;
+  }
+  return true;
 }
 }
 
@@ -376,20 +528,37 @@ private:
 
 struct AudioExportSession
 {
+  enum class Format
+  {
+    Wav,
+    Mp3
+  };
+
   AudioExportSession(const QString& outputPath, const QByteArray& source, int sampleRate,
-                     const AudioEngineParameters& parameters, qint64 start, qint64 end)
-    : path(outputPath), file(outputPath),
+                     const AudioEngineParameters& parameters, qint64 start, qint64 end,
+                     Format outputFormat)
+    : path(outputPath), format(outputFormat), file(outputPath),
       processor(std::make_unique<DspBlockProcessor>(source, sampleRate, parameters, start)),
       startFrame(start), endFrame(end)
   {
   }
 
   QString path;
+  Format format;
   QFile file;
   std::unique_ptr<DspBlockProcessor> processor;
+  std::unique_ptr<QMediaRecorder> recorder;
+  std::unique_ptr<QAudioBufferInput> audioInput;
+  std::unique_ptr<QMediaCaptureSession> captureSession;
+  QAudioFormat audioFormat;
+  QByteArray pendingAudio;
   qint64 startFrame = 0;
   qint64 endFrame = 0;
+  qint64 pendingSourceStart = 0;
+  qint64 pendingSourceEnd = 0;
   qint64 outputBytes = 0;
+  qint64 outputFrames = 0;
+  bool endSubmitted = false;
   bool canceled = false;
 };
 
@@ -638,7 +807,8 @@ void AudioEngine::updatePosition()
 }
 
 bool AudioEngine::startExport(const QString& path, qint64 startMilliseconds,
-                              qint64 endMilliseconds, QString* errorMessage)
+                              qint64 endMilliseconds, QString* errorMessage,
+                              int mp3BitRate)
 {
   if (!decodeComplete_) {
     if (errorMessage) {
@@ -667,20 +837,100 @@ bool AudioEngine::startExport(const QString& path, qint64 startMilliseconds,
     return false;
   }
 
-  exportSession_ = std::make_unique<AudioExportSession>(
-    path, decodedAudio_, sampleRate_, *parameters_, startFrame, endFrame);
-  if (!exportSession_->file.open(QIODevice::WriteOnly)) {
+  const QString suffix = QFileInfo(path).suffix().toLower();
+  if (suffix != "wav" && suffix != "mp3") {
     if (errorMessage) {
-      *errorMessage = exportSession_->file.errorString();
+      *errorMessage = "Export files must use the .wav or .mp3 extension.";
+    }
+    return false;
+  }
+  const bool mp3 = suffix == "mp3";
+  const AudioExportSession::Format outputFormat = mp3
+    ? AudioExportSession::Format::Mp3
+    : AudioExportSession::Format::Wav;
+  exportSession_ = std::make_unique<AudioExportSession>(
+    path, decodedAudio_, sampleRate_, *parameters_, startFrame, endFrame, outputFormat);
+
+  if (!mp3) {
+    if (!exportSession_->file.open(QIODevice::WriteOnly)) {
+      if (errorMessage) {
+        *errorMessage = exportSession_->file.errorString();
+      }
+      exportSession_.reset();
+      return false;
+    }
+
+    QDataStream stream(&exportSession_->file);
+    writeWavHeader(stream, 0, sampleRate_);
+    emit exportProgress(0);
+    QTimer::singleShot(0, this, &AudioEngine::processExportBlock);
+    return true;
+  }
+
+  QMediaFormat mediaFormat(QMediaFormat::MP3);
+  mediaFormat.setAudioCodec(QMediaFormat::AudioCodec::MP3);
+  if (!mediaFormat.isSupported(QMediaFormat::Encode)) {
+    if (errorMessage) {
+      *errorMessage = "MP3 encoding is not supported by the active multimedia backend.";
     }
     exportSession_.reset();
     return false;
   }
 
-  QDataStream stream(&exportSession_->file);
-  writeWavHeader(stream, 0, sampleRate_);
+  exportSession_->audioFormat.setSampleRate(sampleRate_);
+  exportSession_->audioFormat.setChannelCount(2);
+  exportSession_->audioFormat.setSampleFormat(QAudioFormat::Int16);
+  exportSession_->recorder = std::make_unique<QMediaRecorder>();
+  exportSession_->audioInput = std::make_unique<QAudioBufferInput>(
+    exportSession_->audioFormat);
+  exportSession_->captureSession = std::make_unique<QMediaCaptureSession>();
+  exportSession_->captureSession->setAudioBufferInput(exportSession_->audioInput.get());
+  exportSession_->captureSession->setRecorder(exportSession_->recorder.get());
+  exportSession_->recorder->setMediaFormat(mediaFormat);
+  exportSession_->recorder->setEncodingMode(QMediaRecorder::ConstantBitRateEncoding);
+  exportSession_->recorder->setAudioBitRate(
+    std::clamp(mp3BitRate, 128000, 320000));
+  exportSession_->recorder->setAudioSampleRate(sampleRate_);
+  exportSession_->recorder->setAudioChannelCount(2);
+  exportSession_->recorder->setAutoStop(true);
+  exportSession_->recorder->setOutputLocation(QUrl::fromLocalFile(path));
+
+  auto* recorder = exportSession_->recorder.get();
+  connect(exportSession_->audioInput.get(), &QAudioBufferInput::readyToSendAudioBuffer,
+          this, &AudioEngine::processExportBlock);
+  connect(recorder, &QMediaRecorder::errorOccurred, this,
+          [this, recorder](QMediaRecorder::Error, const QString& error) {
+    QTimer::singleShot(0, this, [this, recorder, error] {
+      if (exportSession_ && exportSession_->recorder.get() == recorder) {
+        failExport(error.isEmpty() ? "MP3 encoding failed." : error);
+      }
+    });
+  });
+  connect(recorder, &QMediaRecorder::recorderStateChanged, this,
+          [this, recorder](QMediaRecorder::RecorderState state) {
+    if (state == QMediaRecorder::StoppedState) {
+      QTimer::singleShot(0, this, [this, recorder] {
+        if (exportSession_ && exportSession_->recorder.get() == recorder
+            && (exportSession_->endSubmitted || exportSession_->canceled)) {
+          completeMp3Export();
+        } else if (exportSession_ && exportSession_->recorder.get() == recorder) {
+          failExport("The MP3 encoder stopped before export completed.");
+        }
+      });
+    }
+  });
+
+  QFile::remove(path);
   emit exportProgress(0);
-  QTimer::singleShot(0, this, &AudioEngine::processExportBlock);
+  recorder->record();
+  if (recorder->error() != QMediaRecorder::NoError) {
+    if (errorMessage) {
+      *errorMessage = recorder->errorString();
+    }
+    exportSession_.reset();
+    QFile::remove(path);
+    return false;
+  }
   return true;
 }
 
@@ -688,6 +938,7 @@ void AudioEngine::cancelExport()
 {
   if (exportSession_) {
     exportSession_->canceled = true;
+    QTimer::singleShot(0, this, &AudioEngine::processExportBlock);
   }
 }
 
@@ -697,6 +948,14 @@ void AudioEngine::processExportBlock()
     return;
   }
   if (exportSession_->canceled) {
+    if (exportSession_->format == AudioExportSession::Format::Mp3) {
+      if (exportSession_->recorder->recorderState() != QMediaRecorder::StoppedState) {
+        exportSession_->recorder->stop();
+      } else {
+        completeMp3Export();
+      }
+      return;
+    }
     const QString path = exportSession_->path;
     exportSession_->file.close();
     exportSession_.reset();
@@ -705,8 +964,21 @@ void AudioEngine::processExportBlock()
     return;
   }
 
-  ProcessedBlock block = exportSession_->processor->processNext();
+  ProcessedBlock block;
+  if (!exportSession_->pendingAudio.isEmpty()) {
+    block.audio = exportSession_->pendingAudio;
+    block.sourceStart = exportSession_->pendingSourceStart;
+    block.sourceEnd = exportSession_->pendingSourceEnd;
+  } else {
+    block = exportSession_->processor->processNext();
+  }
   if (block.sourceStart >= exportSession_->endFrame || block.audio.isEmpty()) {
+    if (exportSession_->format == AudioExportSession::Format::Mp3) {
+      if (exportSession_->audioInput->sendAudioBuffer(QAudioBuffer())) {
+        exportSession_->endSubmitted = true;
+      }
+      return;
+    }
     finishExport();
     return;
   }
@@ -718,22 +990,26 @@ void AudioEngine::processExportBlock()
     block.sourceEnd = exportSession_->endFrame;
   }
 
-  if (exportSession_->file.write(block.audio) != block.audio.size()) {
+  if (exportSession_->format == AudioExportSession::Format::Mp3) {
+    const qint64 startTime = exportSession_->outputFrames * 1000000LL / sampleRate_;
+    if (!exportSession_->audioInput->sendAudioBuffer(
+          QAudioBuffer(block.audio, exportSession_->audioFormat, startTime))) {
+      exportSession_->pendingAudio = block.audio;
+      exportSession_->pendingSourceStart = block.sourceStart;
+      exportSession_->pendingSourceEnd = block.sourceEnd;
+      return;
+    }
+    exportSession_->pendingAudio.clear();
+    exportSession_->outputFrames += block.audio.size() / kBytesPerFrame;
+  } else if (exportSession_->file.write(block.audio) != block.audio.size()) {
     const QString error = exportSession_->file.errorString();
-    const QString path = exportSession_->path;
-    exportSession_->file.close();
-    exportSession_.reset();
-    QFile::remove(path);
-    emit exportFailed(error);
+    failExport(error);
     return;
   }
   exportSession_->outputBytes += block.audio.size();
-  if (exportSession_->outputBytes > std::numeric_limits<quint32>::max()) {
-    const QString path = exportSession_->path;
-    exportSession_->file.close();
-    exportSession_.reset();
-    QFile::remove(path);
-    emit exportFailed("The processed audio is too large for a standard WAV file.");
+  if (exportSession_->format == AudioExportSession::Format::Wav
+      && exportSession_->outputBytes > std::numeric_limits<quint32>::max()) {
+    failExport("The processed audio is too large for a standard WAV file.");
     return;
   }
 
@@ -741,7 +1017,13 @@ void AudioEngine::processExportBlock()
   const qint64 total = exportSession_->endFrame - exportSession_->startFrame;
   emit exportProgress(static_cast<int>(completed * 100 / std::max<qint64>(1, total)));
   if (block.sourceEnd >= exportSession_->endFrame) {
-    finishExport();
+    if (exportSession_->format == AudioExportSession::Format::Mp3) {
+      if (exportSession_->audioInput->sendAudioBuffer(QAudioBuffer())) {
+        exportSession_->endSubmitted = true;
+      }
+    } else {
+      finishExport();
+    }
   } else {
     QTimer::singleShot(0, this, &AudioEngine::processExportBlock);
   }
@@ -760,6 +1042,50 @@ void AudioEngine::finishExport()
   exportSession_.reset();
   emit exportProgress(100);
   emit exportFinished(path);
+}
+
+void AudioEngine::completeMp3Export()
+{
+  if (!exportSession_ || exportSession_->format != AudioExportSession::Format::Mp3) {
+    return;
+  }
+  const QString path = exportSession_->path;
+  const bool canceled = exportSession_->canceled;
+  exportSession_.reset();
+  if (canceled) {
+    QFile::remove(path);
+    emit exportCanceled();
+    return;
+  }
+  if (!QFileInfo::exists(path) || QFileInfo(path).size() == 0) {
+    QFile::remove(path);
+    emit exportFailed("The MP3 encoder did not produce an output file.");
+    return;
+  }
+  QString normalizationError;
+  if (!normalizeMp3SeekHeader(path, &normalizationError)) {
+    QFile::remove(path);
+    emit exportFailed(normalizationError);
+    return;
+  }
+  emit exportProgress(100);
+  emit exportFinished(path);
+}
+
+void AudioEngine::failExport(const QString& error)
+{
+  if (!exportSession_) {
+    return;
+  }
+  const QString path = exportSession_->path;
+  exportSession_->file.close();
+  if (exportSession_->recorder
+      && exportSession_->recorder->recorderState() != QMediaRecorder::StoppedState) {
+    exportSession_->recorder->stop();
+  }
+  exportSession_.reset();
+  QFile::remove(path);
+  emit exportFailed(error);
 }
 
 bool AudioEngine::isPlaying() const
