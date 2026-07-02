@@ -60,7 +60,7 @@ int main(int argc, char* argv[])
       const qint64 firstPosition = engine.position();
       engine.setSpeed(800);
       engine.setPitch(3, 25);
-      engine.setQuality(2);
+      engine.setQuality(3);
       engine.setAntiAliasEnabled(true);
       engine.setKaraokeSettings(128, 300, 12000);
       engine.setKaraokeEnabled(true);

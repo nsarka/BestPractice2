@@ -30,7 +30,7 @@ You might use BestPractice to:
 
 - WAV and MP3 playback with progressive decoding.
 - Independent speed, semitone, and fine-pitch controls.
-- WOLA (Weighted Overlap-Add) and WSOLA (Waveform Similarity Overlap-Add) time-stretch modes.
+- WOLA (Weighted Overlap-Add), WSOLA (Waveform Similarity Overlap-Add), and PaulStretch time-stretch algorithms.
 - Optional anti-alias filtering.
 - Karaoke vocal suppression with bass and treble pass-through.
 - Loop selectable regions of the song.
@@ -79,3 +79,7 @@ BestPractice is distributed under the GNU General Public License version 2. See
 [`license.txt`](license.txt). This project is based on the
 [original BestPractice software](https://bestpractice.sourceforge.net/) created
 by Robert Moerland.
+
+PaulStretch is copyright 2006-2011 Nasca Octavian Paul and distributed under
+GPLv2. Its bundled KISS FFT dependency is distributed under the revised BSD
+license. See [`THIRD_PARTY_NOTICES.txt`](THIRD_PARTY_NOTICES.txt).

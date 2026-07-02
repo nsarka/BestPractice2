@@ -363,10 +363,10 @@ QWidget* MainWindow::createProcessingTabs()
   filterCheck_ = new QCheckBox("Anti-aliasing filter");
   filterCheck_->setChecked(true);
   qualityCombo_ = new QComboBox;
-  qualityCombo_->addItems({"Low", "Intermediate", "Best"});
+  qualityCombo_->addItems({"WOLA", "WSOLA (fast)", "WSOLA", "PaulStretch"});
   qualityCombo_->setCurrentIndex(2);
   tp->addWidget(filterCheck_, 6, 0, 1, 3);
-  tp->addWidget(new QLabel("Time-stretch quality"), 7, 0);
+  tp->addWidget(new QLabel("Time-stretch algorithm"), 7, 0);
   tp->addWidget(qualityCombo_, 7, 1, 1, 2);
   tp->setRowStretch(8, 1);
 
@@ -542,7 +542,13 @@ void MainWindow::connectUi()
     audioEngine_->setPitch(pitchSlider_->value(), value);
   });
   connect(filterCheck_, &QCheckBox::toggled, audioEngine_, &AudioEngine::setAntiAliasEnabled);
-  connect(qualityCombo_, &QComboBox::currentIndexChanged, audioEngine_, &AudioEngine::setQuality);
+  connect(qualityCombo_, &QComboBox::currentIndexChanged, this, [this](int algorithm) {
+    constexpr int kPaulStretchMinimum = 10;
+    constexpr int kPracticeMinimum = 200;
+    speedSlider_->setMinimum(algorithm == 3
+      ? kPaulStretchMinimum : kPracticeMinimum);
+    audioEngine_->setQuality(algorithm);
+  });
   connect(karaokeCheck_, &QCheckBox::toggled, this, [this](bool enabled) {
     vocalPositionSlider_->setEnabled(enabled);
     bassSlider_->setEnabled(enabled);

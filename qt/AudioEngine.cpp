@@ -6,6 +6,7 @@
 #include "TKaraokeProcessor.h"
 #include "TReader.h"
 #include "TResampler.h"
+#include "Stretch.h"
 
 #include <QAudioBuffer>
 #include <QAudioBufferInput>
@@ -290,9 +291,12 @@ class DspBlockProcessor
 public:
   DspBlockProcessor(const QByteArray& source, int rate,
                     const AudioEngineParameters& settings, qint64 startFrame)
-    : reader_(source, rate, startFrame),
-      windowLength_(std::max(64, rate / 10)),
-      blockBytes_(2 * windowLength_ * kBytesPerFrame),
+    : source_(source),
+      reader_(source, rate, startFrame),
+      windowLength_(settings.quality == 3
+        ? paulWindowLength(rate) : std::max(64, rate / 10)),
+      blockBytes_((settings.quality == 3 ? 1 : 2)
+        * windowLength_ * kBytesPerFrame),
       stretcher_(windowLength_, blockBytes_, windowLength_ / 4, &reader_),
       parameters_(settings),
       sourceFrames_(source.size() / kBytesPerFrame),
@@ -301,7 +305,18 @@ public:
         -(settings.semitones + settings.cents / 100.0) / 12.0))),
       lowPass_(rate, 8)
   {
-    if (parameters_.quality == 0) {
+    if (parameters_.quality == 3) {
+      const float stretchRatio = 1000.0f
+        / std::max(1.0f, parameters_.speed * pitchScale_);
+      paulLeft_ = std::make_unique<Stretch>(
+        stretchRatio, windowLength_, W_HAMMING, false, rate, 1);
+      paulRight_ = std::make_unique<Stretch>(
+        stretchRatio, windowLength_, W_HAMMING, false, rate, 2);
+      paulInputLeft_.resize(static_cast<size_t>(windowLength_ * 3));
+      paulInputRight_.resize(static_cast<size_t>(windowLength_ * 3));
+      paulReadFrame_ = nextSourceFrame_;
+      paulLogicalFrame_ = static_cast<double>(nextSourceFrame_);
+    } else if (parameters_.quality == 0) {
       stretcher_.SetMode(tsmWOLA);
     } else {
       stretcher_.SetMode(tsmWSOLA);
@@ -335,10 +350,14 @@ public:
     }
 
     std::vector<char> stretched(static_cast<size_t>(blockBytes_), 0);
-    const int bytesUsed = stretcher_.ProcessBlock(
-      parameters_.speed * pitchScale_, stretched.data());
-    const qint64 consumed = std::max(1, bytesUsed / kBytesPerFrame);
-    nextSourceFrame_ = std::min(sourceFrames_, nextSourceFrame_ + consumed);
+    if (parameters_.quality == 3) {
+      processPaulStretch(stretched);
+    } else {
+      const int bytesUsed = stretcher_.ProcessBlock(
+        parameters_.speed * pitchScale_, stretched.data());
+      const qint64 consumed = std::max(1, bytesUsed / kBytesPerFrame);
+      nextSourceFrame_ = std::min(sourceFrames_, nextSourceFrame_ + consumed);
+    }
     block.sourceEnd = nextSourceFrame_;
 
     if (parameters_.karaoke) {
@@ -365,14 +384,75 @@ public:
       block.audio.append(finalData, blockBytes_);
     }
 
-    const qint64 desiredFrames = (block.sourceEnd - block.sourceStart) * 1000
-      / std::max(1, parameters_.speed);
-    block.audio.truncate(static_cast<qsizetype>(std::min<qint64>(
-      block.audio.size(), desiredFrames * kBytesPerFrame)));
+    if (parameters_.quality != 3) {
+      const qint64 desiredFrames = (block.sourceEnd - block.sourceStart) * 1000
+        / std::max(1, parameters_.speed);
+      block.audio.truncate(static_cast<qsizetype>(std::min<qint64>(
+        block.audio.size(), desiredFrames * kBytesPerFrame)));
+    }
     return block;
   }
 
 private:
+  static int paulWindowLength(int sampleRate)
+  {
+    const int target = std::max(64, sampleRate / 8);
+    int length = 64;
+    while (length < target) {
+      length *= 2;
+    }
+    return length;
+  }
+
+  void processPaulStretch(std::vector<char>& output)
+  {
+    if (paulSkipFrames_ > 0) {
+      paulReadFrame_ = std::min(sourceFrames_,
+        paulReadFrame_ + paulSkipFrames_);
+      paulSkipFrames_ = 0;
+    }
+
+    const int requested = paulFirstBlock_
+      ? paulLeft_->get_nsamples_for_fill()
+      : paulLeft_->get_nsamples(sourceFrames_ > 0
+          ? static_cast<float>(paulReadFrame_) * 100.0f / sourceFrames_
+          : 0.0f);
+    std::fill_n(paulInputLeft_.begin(), requested, 0.0f);
+    std::fill_n(paulInputRight_.begin(), requested, 0.0f);
+
+    const qint64 available = std::max<qint64>(0, sourceFrames_ - paulReadFrame_);
+    const int supplied = static_cast<int>(std::min<qint64>(requested, available));
+    const auto* samples = reinterpret_cast<const qint16*>(
+      source_.constData() + paulReadFrame_ * kBytesPerFrame);
+    constexpr float kInt16Scale = 1.0f / 32768.0f;
+    for (int frame = 0; frame < supplied; ++frame) {
+      paulInputLeft_[static_cast<size_t>(frame)] = samples[frame * 2] * kInt16Scale;
+      paulInputRight_[static_cast<size_t>(frame)] = samples[frame * 2 + 1] * kInt16Scale;
+    }
+    paulReadFrame_ += supplied;
+
+    const float onsetLeft = paulLeft_->process(paulInputLeft_.data(), requested);
+    const float onsetRight = paulRight_->process(paulInputRight_.data(), requested);
+    const float onset = std::max(onsetLeft, onsetRight);
+    paulLeft_->here_is_onset(onset);
+    paulRight_->here_is_onset(onset);
+    paulSkipFrames_ = std::max(0, paulLeft_->get_skip_nsamples());
+    paulFirstBlock_ = false;
+
+    paulLogicalFrame_ += windowLength_ * parameters_.speed * pitchScale_ / 1000.0;
+    nextSourceFrame_ = std::min(sourceFrames_,
+      static_cast<qint64>(std::llround(paulLogicalFrame_)));
+
+    auto* destination = reinterpret_cast<qint16*>(output.data());
+    for (int frame = 0; frame < windowLength_; ++frame) {
+      const float left = std::clamp(paulLeft_->out_buf[frame], -1.0f, 1.0f);
+      const float right = std::clamp(paulRight_->out_buf[frame], -1.0f, 1.0f);
+      destination[frame * 2] = static_cast<qint16>(std::lround(left * 32767.0f));
+      destination[frame * 2 + 1] = static_cast<qint16>(std::lround(right * 32767.0f));
+    }
+  }
+
+  QByteArray source_;
   MemoryReader reader_;
   int windowLength_;
   int blockBytes_;
@@ -384,6 +464,14 @@ private:
   TResampler resampler_;
   TKaraokeProcessor karaoke_;
   CIIRButterLow lowPass_;
+  std::unique_ptr<Stretch> paulLeft_;
+  std::unique_ptr<Stretch> paulRight_;
+  std::vector<float> paulInputLeft_;
+  std::vector<float> paulInputRight_;
+  qint64 paulSkipFrames_ = 0;
+  qint64 paulReadFrame_ = 0;
+  double paulLogicalFrame_ = 0.0;
+  bool paulFirstBlock_ = true;
 };
 }
 

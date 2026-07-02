@@ -34,6 +34,33 @@ if(BESTPRACTICE_BUILD_QT_FORMS)
     find_package(Qt6 QUIET COMPONENTS Widgets Multimedia)
 
     if(Qt6_FOUND)
+        enable_language(C)
+        include(FetchContent)
+
+        # PaulStretch is GPLv2 and bundles the BSD-licensed KISS FFT implementation.
+        # Pin the source so builds use the same reviewed algorithm revision.
+        FetchContent_Declare(
+            paulstretch_source
+            GIT_REPOSITORY https://github.com/paulnasca/paulstretch_cpp.git
+            GIT_TAG 7f5c3993abe420661ea0b808304b0e2b4b0048c5
+            GIT_SHALLOW FALSE
+        )
+        FetchContent_MakeAvailable(paulstretch_source)
+
+        add_library(paulstretch STATIC
+            "${paulstretch_source_SOURCE_DIR}/Stretch.cpp"
+            "${paulstretch_source_SOURCE_DIR}/contrib/kiss_fft.c"
+            "${paulstretch_source_SOURCE_DIR}/contrib/kiss_fftr.c"
+        )
+        target_compile_definitions(paulstretch
+            PUBLIC KISSFFT
+            PRIVATE M_PI=3.14159265358979323846
+        )
+        target_include_directories(paulstretch PUBLIC
+            "${paulstretch_source_SOURCE_DIR}"
+            "${paulstretch_source_SOURCE_DIR}/contrib"
+        )
+
         configure_file(qt/BestPractice.rc.in BestPractice.rc @ONLY)
 
         add_executable(bestpractice_qt WIN32
@@ -52,7 +79,7 @@ if(BESTPRACTICE_BUILD_QT_FORMS)
 
         set_target_properties(bestpractice_qt PROPERTIES AUTOMOC ON AUTORCC ON)
 
-        target_link_libraries(bestpractice_qt PRIVATE Qt6::Widgets Qt6::Multimedia bestpractice_core)
+        target_link_libraries(bestpractice_qt PRIVATE Qt6::Widgets Qt6::Multimedia bestpractice_core paulstretch)
         target_include_directories(bestpractice_qt PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
 
         add_custom_command(TARGET bestpractice_qt POST_BUILD
@@ -81,6 +108,9 @@ if(BESTPRACTICE_BUILD_QT_FORMS)
                 COMMAND ${CMAKE_COMMAND} -E copy_if_different
                     "${CMAKE_CURRENT_SOURCE_DIR}/README.md"
                     "${BESTPRACTICE_PACKAGE_DIR}/README.md"
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                    "${CMAKE_CURRENT_SOURCE_DIR}/THIRD_PARTY_NOTICES.txt"
+                    "${BESTPRACTICE_PACKAGE_DIR}/THIRD_PARTY_NOTICES.txt"
                 COMMAND "${WINDEPLOYQT_EXECUTABLE}" --no-translations --compiler-runtime
                     "${BESTPRACTICE_PACKAGE_DIR}/BestPractice.exe"
                 DEPENDS bestpractice_qt
@@ -117,7 +147,7 @@ if(BESTPRACTICE_BUILD_QT_FORMS)
             tools/audio_engine_smoke.cpp
         )
         set_target_properties(bestpractice_audio_engine_smoke PROPERTIES AUTOMOC ON)
-        target_link_libraries(bestpractice_audio_engine_smoke PRIVATE Qt6::Multimedia bestpractice_core)
+        target_link_libraries(bestpractice_audio_engine_smoke PRIVATE Qt6::Multimedia bestpractice_core paulstretch)
         target_include_directories(bestpractice_audio_engine_smoke PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
     else()
         message(STATUS "Qt 6 Widgets and Multimedia were not found; skipping bestpractice_qt. Install those Qt 6 modules and reconfigure to build the modern app.")
