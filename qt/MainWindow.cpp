@@ -638,8 +638,7 @@ void MainWindow::connectUi()
     statusBar()->showMessage(error);
   });
 
-  auto* playShortcut = new QShortcut(
-    QKeySequence(QKeyCombination(Qt::KeypadModifier, Qt::Key_0)), this);
+  auto* playShortcut = new QShortcut(QKeySequence(Qt::Key_Space), this);
   connect(playShortcut, &QShortcut::activated, audioEngine_, &AudioEngine::togglePlayback);
   auto* restartShortcut = new QShortcut(QKeySequence(Qt::Key_Backspace), this);
   connect(restartShortcut, &QShortcut::activated, this, [this] { audioEngine_->seek(0); });
