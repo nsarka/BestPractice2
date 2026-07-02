@@ -41,6 +41,14 @@ int main(int argc, char* argv[])
   bool mp3ExportOkay = false;
   qint64 mp3DecodedMicroseconds = 0;
   int cancellationStage = 0;
+  bool algorithmOkay = false;
+  const int requestedAlgorithm = qEnvironmentVariableIntValue(
+    "BESTPRACTICE_SMOKE_ALGORITHM", &algorithmOkay);
+  const int algorithm = algorithmOkay ? requestedAlgorithm : 0;
+  bool karaokeOkay = false;
+  const int requestedKaraoke = qEnvironmentVariableIntValue(
+    "BESTPRACTICE_SMOKE_KARAOKE", &karaokeOkay);
+  const bool karaoke = karaokeOkay ? requestedKaraoke != 0 : true;
   AudioEngine engine;
 
   std::function<void()> beginExports = [&] {
@@ -60,10 +68,10 @@ int main(int argc, char* argv[])
       const qint64 firstPosition = engine.position();
       engine.setSpeed(800);
       engine.setPitch(3, 25);
-      engine.setQuality(3);
+      engine.setQuality(algorithm);
       engine.setAntiAliasEnabled(true);
       engine.setKaraokeSettings(128, 300, 12000);
-      engine.setKaraokeEnabled(true);
+      engine.setKaraokeEnabled(karaoke);
 
       QTimer::singleShot(500, &app, [&, firstPosition] {
         playbackOkay = firstPosition > 0 && engine.position() > firstPosition;

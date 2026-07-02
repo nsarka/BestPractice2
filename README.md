@@ -30,13 +30,31 @@ You might use BestPractice to:
 
 - WAV and MP3 playback with progressive decoding.
 - Independent speed, semitone, and fine-pitch controls.
-- WOLA (Weighted Overlap-Add), WSOLA (Waveform Similarity Overlap-Add), and PaulStretch time-stretch algorithms.
+- WOLA, WSOLA, Signalsmith Stretch, Rubber Band R3, and PaulStretch time-stretch algorithms.
 - Optional anti-alias filtering.
 - Karaoke vocal suppression with bass and treble pass-through.
 - Loop selectable regions of the song.
 - Full-track or loop-region WAV and MP3 export.
 - File drag-and-drop to load songs.
 - Keyboard playback controls.
+
+## DSP Algorithms
+
+- **Rubber Band R3** is the default high-quality algorithm for normal music
+  practice. It provides native time stretching and formant-preserving pitch
+  shifting for complete polyphonic mixes.
+- **Signalsmith Stretch** provides modern polyphonic time stretching and
+  native pitch shifting, particularly for moderate speed changes.
+- **WOLA** and **WSOLA** are the original BestPractice time-domain algorithms.
+  The fast WSOLA mode favors responsiveness, while standard WSOLA performs a
+  more thorough waveform search.
+- **PaulStretch** is an experimental spectral algorithm for extreme slowdown
+  and ambient transformation. When selected, the speed control extends down
+  to 1%.
+
+Pitch and speed can be adjusted independently with every algorithm. Rubber
+Band R3 and Signalsmith Stretch process pitch natively; the original engines
+and PaulStretch use BestPractice's resampling pipeline.
 
 ## Build
 
@@ -83,3 +101,8 @@ by Robert Moerland.
 PaulStretch is copyright 2006-2011 Nasca Octavian Paul and distributed under
 GPLv2. Its bundled KISS FFT dependency is distributed under the revised BSD
 license. See [`THIRD_PARTY_NOTICES.txt`](THIRD_PARTY_NOTICES.txt).
+
+Signalsmith Stretch is copyright Geraint Luff and distributed under the MIT
+license. Rubber Band Library is copyright 2007-2024 Particular Programs Ltd
+and distributed under GPLv2 or later. See
+[`THIRD_PARTY_NOTICES.txt`](THIRD_PARTY_NOTICES.txt).

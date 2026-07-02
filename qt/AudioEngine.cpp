@@ -7,6 +7,8 @@
 #include "TReader.h"
 #include "TResampler.h"
 #include "Stretch.h"
+#include "rubberband/RubberBandStretcher.h"
+#include "signalsmith-stretch/signalsmith-stretch.h"
 
 #include <QAudioBuffer>
 #include <QAudioBufferInput>
@@ -39,6 +41,12 @@ namespace
 constexpr int kBytesPerFrame = 4;
 constexpr qsizetype kSinkBufferFrames = 4096;
 constexpr int kProgressiveBufferSeconds = 2;
+constexpr int kRubberBandAlgorithm = 0;
+constexpr int kSignalsmithAlgorithm = 1;
+constexpr int kWolaAlgorithm = 2;
+constexpr int kWsolaFastAlgorithm = 3;
+constexpr int kPaulStretchAlgorithm = 5;
+constexpr int kSpectralBlockFrames = 4096;
 
 class MemoryReader final : public AudioReader::TReader
 {
@@ -260,7 +268,7 @@ struct AudioEngineParameters
   int speed = 1000;
   int semitones = 0;
   int cents = 0;
-  int quality = 2;
+  int quality = kRubberBandAlgorithm;
   int vocalPosition = 128;
   int bassCutoff = 0;
   int trebleRange = 0;
@@ -293,10 +301,14 @@ public:
                     const AudioEngineParameters& settings, qint64 startFrame)
     : source_(source),
       reader_(source, rate, startFrame),
-      windowLength_(settings.quality == 3
+      windowLength_(settings.quality == kPaulStretchAlgorithm
         ? paulWindowLength(rate) : std::max(64, rate / 10)),
-      blockBytes_((settings.quality == 3 ? 1 : 2)
-        * windowLength_ * kBytesPerFrame),
+      outputFrames_(settings.quality == kPaulStretchAlgorithm
+        ? windowLength_
+        : (settings.quality == kSignalsmithAlgorithm
+            || settings.quality == kRubberBandAlgorithm)
+          ? kSpectralBlockFrames : 2 * windowLength_),
+      blockBytes_(outputFrames_ * kBytesPerFrame),
       stretcher_(windowLength_, blockBytes_, windowLength_ / 4, &reader_),
       parameters_(settings),
       sourceFrames_(source.size() / kBytesPerFrame),
@@ -305,7 +317,7 @@ public:
         -(settings.semitones + settings.cents / 100.0) / 12.0))),
       lowPass_(rate, 8)
   {
-    if (parameters_.quality == 3) {
+    if (parameters_.quality == kPaulStretchAlgorithm) {
       const float stretchRatio = 1000.0f
         / std::max(1.0f, parameters_.speed * pitchScale_);
       paulLeft_ = std::make_unique<Stretch>(
@@ -316,11 +328,16 @@ public:
       paulInputRight_.resize(static_cast<size_t>(windowLength_ * 3));
       paulReadFrame_ = nextSourceFrame_;
       paulLogicalFrame_ = static_cast<double>(nextSourceFrame_);
-    } else if (parameters_.quality == 0) {
+    } else if (parameters_.quality == kSignalsmithAlgorithm) {
+      configureSignalsmith(rate);
+    } else if (parameters_.quality == kRubberBandAlgorithm) {
+      configureRubberBand(rate);
+    } else if (parameters_.quality == kWolaAlgorithm) {
       stretcher_.SetMode(tsmWOLA);
     } else {
       stretcher_.SetMode(tsmWSOLA);
-      stretcher_.SetMode(parameters_.quality == 1 ? wxmFast : wxmGood);
+      stretcher_.SetMode(parameters_.quality == kWsolaFastAlgorithm
+        ? wxmFast : wxmGood);
     }
 
     karaoke_.SetSampleFreq(rate);
@@ -330,7 +347,7 @@ public:
       : 0);
     karaoke_.SetVocalPosition(parameters_.vocalPosition);
 
-    if (pitchScale_ < 1.0f && parameters_.antiAlias) {
+    if (!usesNativePitch() && pitchScale_ < 1.0f && parameters_.antiAlias) {
       lowPass_.SetCutOff(rate * pitchScale_ / 4.0);
     }
   }
@@ -350,8 +367,12 @@ public:
     }
 
     std::vector<char> stretched(static_cast<size_t>(blockBytes_), 0);
-    if (parameters_.quality == 3) {
+    if (parameters_.quality == kPaulStretchAlgorithm) {
       processPaulStretch(stretched);
+    } else if (parameters_.quality == kSignalsmithAlgorithm) {
+      processSignalsmith(stretched);
+    } else if (parameters_.quality == kRubberBandAlgorithm) {
+      processRubberBand(stretched);
     } else {
       const int bytesUsed = stretcher_.ProcessBlock(
         parameters_.speed * pitchScale_, stretched.data());
@@ -367,13 +388,13 @@ public:
 
     char* finalData = stretched.data();
     std::vector<char> filtered;
-    if (pitchScale_ < 1.0f && parameters_.antiAlias) {
+    if (!usesNativePitch() && pitchScale_ < 1.0f && parameters_.antiAlias) {
       filtered.resize(static_cast<size_t>(blockBytes_));
       lowPass_.Filter(stretched.data(), filtered.data(), blockBytes_ / kBytesPerFrame);
       finalData = filtered.data();
     }
 
-    if (std::abs(pitchScale_ - 1.0f) > 0.00001f) {
+    if (!usesNativePitch() && std::abs(pitchScale_ - 1.0f) > 0.00001f) {
       const size_t capacity = static_cast<size_t>(
         std::ceil(blockBytes_ * std::max(1.0f, pitchScale_) + 16));
       std::vector<char> resampled(capacity, 0);
@@ -384,7 +405,7 @@ public:
       block.audio.append(finalData, blockBytes_);
     }
 
-    if (parameters_.quality != 3) {
+    if (parameters_.quality != kPaulStretchAlgorithm) {
       const qint64 desiredFrames = (block.sourceEnd - block.sourceStart) * 1000
         / std::max(1, parameters_.speed);
       block.audio.truncate(static_cast<qsizetype>(std::min<qint64>(
@@ -394,6 +415,160 @@ public:
   }
 
 private:
+  bool usesNativePitch() const
+  {
+    return parameters_.quality == kSignalsmithAlgorithm
+      || parameters_.quality == kRubberBandAlgorithm;
+  }
+
+  void configureSignalsmith(int sampleRate)
+  {
+    signalsmith_ = std::make_unique<
+      signalsmith::stretch::SignalsmithStretch<float>>();
+    signalsmith_->presetDefault(2, sampleRate);
+    signalsmith_->setTransposeSemitones(
+      parameters_.semitones + parameters_.cents / 100.0f);
+    algorithmReadFrame_ = nextSourceFrame_;
+    algorithmLogicalFrame_ = static_cast<double>(nextSourceFrame_);
+
+    const int seekFrames = signalsmith_->seekLength();
+    spectralInputLeft_.assign(static_cast<size_t>(seekFrames), 0.0f);
+    spectralInputRight_.assign(static_cast<size_t>(seekFrames), 0.0f);
+    const qint64 firstFrame = std::max<qint64>(0, nextSourceFrame_ - seekFrames);
+    const int available = static_cast<int>(nextSourceFrame_ - firstFrame);
+    readPlanar(firstFrame, available,
+               spectralInputLeft_.data() + seekFrames - available,
+               spectralInputRight_.data() + seekFrames - available);
+    const float* input[] = {spectralInputLeft_.data(), spectralInputRight_.data()};
+    signalsmith_->seek(input, seekFrames, parameters_.speed / 1000.0);
+  }
+
+  void configureRubberBand(int sampleRate)
+  {
+    using Stretcher = RubberBand::RubberBandStretcher;
+    const int options = Stretcher::OptionProcessRealTime
+      | Stretcher::OptionEngineFiner
+      | Stretcher::OptionChannelsTogether
+      | Stretcher::OptionFormantPreserved
+      | Stretcher::OptionPitchHighConsistency;
+    rubberBand_ = std::make_unique<Stretcher>(
+      static_cast<size_t>(sampleRate), 2, options,
+      1000.0 / parameters_.speed,
+      std::pow(2.0, (parameters_.semitones + parameters_.cents / 100.0) / 12.0));
+    rubberBand_->setMaxProcessSize(kSpectralBlockFrames);
+    rubberStartPadRemaining_ = rubberBand_->getPreferredStartPad();
+    rubberDiscardRemaining_ = rubberBand_->getStartDelay();
+    algorithmReadFrame_ = nextSourceFrame_;
+    algorithmLogicalFrame_ = static_cast<double>(nextSourceFrame_);
+  }
+
+  void readPlanar(qint64 startFrame, int frames, float* left, float* right) const
+  {
+    constexpr float kInt16Scale = 1.0f / 32768.0f;
+    const auto* samples = reinterpret_cast<const qint16*>(
+      source_.constData() + startFrame * kBytesPerFrame);
+    for (int frame = 0; frame < frames; ++frame) {
+      left[frame] = samples[frame * 2] * kInt16Scale;
+      right[frame] = samples[frame * 2 + 1] * kInt16Scale;
+    }
+  }
+
+  static void writeInterleaved(const float* left, const float* right,
+                               int frames, char* output)
+  {
+    auto* destination = reinterpret_cast<qint16*>(output);
+    for (int frame = 0; frame < frames; ++frame) {
+      destination[frame * 2] = static_cast<qint16>(std::lround(
+        std::clamp(left[frame], -1.0f, 1.0f) * 32767.0f));
+      destination[frame * 2 + 1] = static_cast<qint16>(std::lround(
+        std::clamp(right[frame], -1.0f, 1.0f) * 32767.0f));
+    }
+  }
+
+  void advanceSpectralTimeline()
+  {
+    algorithmLogicalFrame_ += outputFrames_ * parameters_.speed / 1000.0;
+    nextSourceFrame_ = std::min(sourceFrames_,
+      static_cast<qint64>(std::llround(algorithmLogicalFrame_)));
+  }
+
+  void processSignalsmith(std::vector<char>& output)
+  {
+    spectralInputRemainder_ += outputFrames_ * parameters_.speed / 1000.0;
+    const int requested = std::max(1, static_cast<int>(spectralInputRemainder_));
+    spectralInputRemainder_ -= requested;
+    spectralInputLeft_.assign(static_cast<size_t>(requested), 0.0f);
+    spectralInputRight_.assign(static_cast<size_t>(requested), 0.0f);
+    const int supplied = static_cast<int>(std::min<qint64>(
+      requested, std::max<qint64>(0, sourceFrames_ - algorithmReadFrame_)));
+    readPlanar(algorithmReadFrame_, supplied,
+               spectralInputLeft_.data(), spectralInputRight_.data());
+    algorithmReadFrame_ += supplied;
+
+    spectralOutputLeft_.assign(static_cast<size_t>(outputFrames_), 0.0f);
+    spectralOutputRight_.assign(static_cast<size_t>(outputFrames_), 0.0f);
+    const float* input[] = {spectralInputLeft_.data(), spectralInputRight_.data()};
+    float* result[] = {spectralOutputLeft_.data(), spectralOutputRight_.data()};
+    signalsmith_->process(input, requested, result, outputFrames_);
+    writeInterleaved(result[0], result[1], outputFrames_, output.data());
+    advanceSpectralTimeline();
+  }
+
+  void processRubberBand(std::vector<char>& output)
+  {
+    spectralOutputLeft_.assign(static_cast<size_t>(outputFrames_), 0.0f);
+    spectralOutputRight_.assign(static_cast<size_t>(outputFrames_), 0.0f);
+    int written = 0;
+    int attempts = 0;
+    while (written < outputFrames_ && attempts++ < 64) {
+      const int available = rubberBand_->available();
+      if (available > 0) {
+        const int wanted = std::min(available,
+          outputFrames_ - written + static_cast<int>(rubberDiscardRemaining_));
+        rubberScratchLeft_.resize(static_cast<size_t>(wanted));
+        rubberScratchRight_.resize(static_cast<size_t>(wanted));
+        float* retrieved[] = {rubberScratchLeft_.data(), rubberScratchRight_.data()};
+        const int received = static_cast<int>(rubberBand_->retrieve(retrieved, wanted));
+        const int discarded = std::min(received,
+          static_cast<int>(rubberDiscardRemaining_));
+        rubberDiscardRemaining_ -= discarded;
+        const int copied = received - discarded;
+        std::copy_n(retrieved[0] + discarded, copied,
+                    spectralOutputLeft_.begin() + written);
+        std::copy_n(retrieved[1] + discarded, copied,
+                    spectralOutputRight_.begin() + written);
+        written += copied;
+        continue;
+      }
+
+      if (rubberFinalSubmitted_) {
+        break;
+      }
+      const int requested = static_cast<int>(std::max<size_t>(
+        1, rubberBand_->getSamplesRequired()));
+      spectralInputLeft_.assign(static_cast<size_t>(requested), 0.0f);
+      spectralInputRight_.assign(static_cast<size_t>(requested), 0.0f);
+      int offset = static_cast<int>(std::min<size_t>(
+        rubberStartPadRemaining_, static_cast<size_t>(requested)));
+      rubberStartPadRemaining_ -= offset;
+      const int capacity = requested - offset;
+      const int supplied = static_cast<int>(std::min<qint64>(capacity,
+        std::max<qint64>(0, sourceFrames_ - algorithmReadFrame_)));
+      readPlanar(algorithmReadFrame_, supplied,
+                 spectralInputLeft_.data() + offset,
+                 spectralInputRight_.data() + offset);
+      algorithmReadFrame_ += supplied;
+      const float* input[] = {spectralInputLeft_.data(), spectralInputRight_.data()};
+      const bool final = rubberStartPadRemaining_ == 0
+        && algorithmReadFrame_ >= sourceFrames_;
+      rubberBand_->process(input, requested, final);
+      rubberFinalSubmitted_ = final;
+    }
+    writeInterleaved(spectralOutputLeft_.data(), spectralOutputRight_.data(),
+                     outputFrames_, output.data());
+    advanceSpectralTimeline();
+  }
+
   static int paulWindowLength(int sampleRate)
   {
     const int target = std::max(64, sampleRate / 8);
@@ -455,6 +630,7 @@ private:
   QByteArray source_;
   MemoryReader reader_;
   int windowLength_;
+  int outputFrames_;
   int blockBytes_;
   CWOLA stretcher_;
   AudioEngineParameters parameters_;
@@ -472,6 +648,20 @@ private:
   qint64 paulReadFrame_ = 0;
   double paulLogicalFrame_ = 0.0;
   bool paulFirstBlock_ = true;
+  std::unique_ptr<signalsmith::stretch::SignalsmithStretch<float>> signalsmith_;
+  std::unique_ptr<RubberBand::RubberBandStretcher> rubberBand_;
+  std::vector<float> spectralInputLeft_;
+  std::vector<float> spectralInputRight_;
+  std::vector<float> spectralOutputLeft_;
+  std::vector<float> spectralOutputRight_;
+  std::vector<float> rubberScratchLeft_;
+  std::vector<float> rubberScratchRight_;
+  qint64 algorithmReadFrame_ = 0;
+  double algorithmLogicalFrame_ = 0.0;
+  double spectralInputRemainder_ = 0.0;
+  size_t rubberStartPadRemaining_ = 0;
+  size_t rubberDiscardRemaining_ = 0;
+  bool rubberFinalSubmitted_ = false;
 };
 }
 

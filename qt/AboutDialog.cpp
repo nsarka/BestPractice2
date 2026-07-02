@@ -26,7 +26,9 @@ AboutDialog::AboutDialog(QWidget* parent)
     "Original BestPractice software (c) 2007 Robert Moerland<br>"
     "<a href=\"https://bestpractice.sourceforge.net/\">"
     "bestpractice.sourceforge.net</a><br>"
-    "PaulStretch algorithm (c) 2006-2011 Nasca Octavian Paul<br><br>"
+    "PaulStretch algorithm (c) 2006-2011 Nasca Octavian Paul<br>"
+    "Signalsmith Stretch (c) Geraint Luff<br>"
+    "Rubber Band Library (c) 2007-2024 Particular Programs Ltd<br><br>"
     "<a href=\"https://github.com/nsarka/BestPractice2\">"
     "github.com/nsarka/BestPractice2</a>");
   body->setOpenExternalLinks(true);

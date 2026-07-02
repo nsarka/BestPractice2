@@ -47,6 +47,22 @@ if(BESTPRACTICE_BUILD_QT_FORMS)
         )
         FetchContent_MakeAvailable(paulstretch_source)
 
+        FetchContent_Declare(
+            signalsmith_stretch_source
+            GIT_REPOSITORY https://github.com/Signalsmith-Audio/signalsmith-stretch.git
+            GIT_TAG 57b93f4e9206a089a45387eaa39bdc9f310d3308
+            GIT_SHALLOW FALSE
+        )
+        FetchContent_MakeAvailable(signalsmith_stretch_source)
+
+        FetchContent_Declare(
+            rubberband_source
+            GIT_REPOSITORY https://github.com/breakfastquay/rubberband.git
+            GIT_TAG e4296ac80b1170018a110bc326fd0d45a0eb27d6
+            GIT_SHALLOW FALSE
+        )
+        FetchContent_MakeAvailable(rubberband_source)
+
         add_library(paulstretch STATIC
             "${paulstretch_source_SOURCE_DIR}/Stretch.cpp"
             "${paulstretch_source_SOURCE_DIR}/contrib/kiss_fft.c"
@@ -59,6 +75,13 @@ if(BESTPRACTICE_BUILD_QT_FORMS)
         target_include_directories(paulstretch PUBLIC
             "${paulstretch_source_SOURCE_DIR}"
             "${paulstretch_source_SOURCE_DIR}/contrib"
+        )
+
+        add_library(rubberband_r3 STATIC
+            "${rubberband_source_SOURCE_DIR}/single/RubberBandSingle.cpp"
+        )
+        target_include_directories(rubberband_r3 PUBLIC
+            "${rubberband_source_SOURCE_DIR}"
         )
 
         configure_file(qt/BestPractice.rc.in BestPractice.rc @ONLY)
@@ -79,7 +102,8 @@ if(BESTPRACTICE_BUILD_QT_FORMS)
 
         set_target_properties(bestpractice_qt PROPERTIES AUTOMOC ON AUTORCC ON)
 
-        target_link_libraries(bestpractice_qt PRIVATE Qt6::Widgets Qt6::Multimedia bestpractice_core paulstretch)
+        target_link_libraries(bestpractice_qt PRIVATE Qt6::Widgets Qt6::Multimedia
+            bestpractice_core paulstretch signalsmith-stretch rubberband_r3)
         target_include_directories(bestpractice_qt PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
 
         add_custom_command(TARGET bestpractice_qt POST_BUILD
@@ -147,7 +171,8 @@ if(BESTPRACTICE_BUILD_QT_FORMS)
             tools/audio_engine_smoke.cpp
         )
         set_target_properties(bestpractice_audio_engine_smoke PROPERTIES AUTOMOC ON)
-        target_link_libraries(bestpractice_audio_engine_smoke PRIVATE Qt6::Multimedia bestpractice_core paulstretch)
+        target_link_libraries(bestpractice_audio_engine_smoke PRIVATE Qt6::Multimedia
+            bestpractice_core paulstretch signalsmith-stretch rubberband_r3)
         target_include_directories(bestpractice_audio_engine_smoke PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
     else()
         message(STATUS "Qt 6 Widgets and Multimedia were not found; skipping bestpractice_qt. Install those Qt 6 modules and reconfigure to build the modern app.")
